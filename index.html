@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Big Grid</title>
+<style>
+  body { margin: 0; background: #111; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ---- SETTINGS (change these numbers to play with it) ----
+const GRID_SIZE = 200;   // the grid is 200 x 200 squares
+const CELL = 40;         // each square is 40 pixels wide
+
+// ---- THE TWO PLAYERS ----
+// x = column, y = row. Player 1 starts on the left, player 2 on the right.
+const p1 = { x: 3,                y: GRID_SIZE / 2, color: "#4da3ff" };
+const p2 = { x: GRID_SIZE - 4,    y: GRID_SIZE / 2, color: "#ff5c5c" };
+
+// x and y are the dot's REAL square. drawX and drawY are where we SHOW it.
+// The shown position glides toward the real one, which makes movement smooth.
+for (const p of [p1, p2]) {
+  p.drawX = p.x;
+  p.drawY = p.y;
+}
+
+// Remember which way each dot last moved (the CPU uses this to aim ahead of you)
+for (const p of [p1, p2]) {
+  p.dirX = 0;
+  p.dirY = 0;
+}
+
+// ---- THE MAP ----
+// The world has 6 zones with their own colours. Rocks and trees are walls:
+// they block you AND the CPU. Portals teleport whoever steps on them (you
+// or the CPU). Crystals are collectables.
+const N = GRID_SIZE;
+const DIRS = [[0, -1], [0, 1], [-1, 0], [1, 0]];   // up, down, left, right
+
+// Each zone can change how fast things move there. speed: 1 = normal,
+// bigger = slower, smaller = faster. This affects you AND the CPU.
+const BIOMES = [
+  { name: "Meadow",        floor: ["#2f5d3a", "#315f3c", "#2c5836", "#346640"], wall: "#1b3d26", top: "#3f7d4f", speed: 1,    note: "" },
+  { name: "Desert",        floor: ["#c9a66b", "#c4a064", "#cfac72", "#c29c5f"], wall: "#8a6a3a", top: "#b08a50", speed: 1,    note: "" },
+  { name: "Tundra",        floor: ["#dfe9ef", "#d6e2ea", "#e6eef3", "#d0dde6"], wall: "#7f98a8", top: "#a9c0cf", speed: 0.65, note: "ice: everyone moves faster" },
+  { name: "Swamp",         floor: ["#3b4a2c", "#38472a", "#3f4e2f", "#354427"], wall: "#1f2916", top: "#34471f", speed: 1.8,  note: "mud: everyone moves slower" },
+  { name: "Volcano",       floor: ["#3a2a2a", "#352626", "#3f2e2e", "#312323"], wall: "#1a1111", top: "#7a2f1a", speed: 1,    note: "lava pools: deadly to you", lava: true },
+  { name: "Crystal Caves", floor: ["#2c2a52", "#2a2850", "#302e58", "#282649"], wall: "#4a3f8f", top: "#8272e0", speed: 1,    note: "extra crystals here", crystalBias: true }
+];
+const PORTAL_COLORS = ["#ff4da6", "#4dffd2", "#ffd24d", "#4da6ff", "#b84dff", "#ff8a4d", "#9dff4d", "#ffffff"];
+const NUM_ROCK_CLUMPS = 380;   // more = a more crowded map
+const NUM_RUINS = 24;          // walled rooms with doorways
+const NUM_CRYSTALS = 45;
+const NUM_LAVA_POOLS = 45;     // lava pools placed in the Volcano zone
+const CRYSTAL_RESPAWN = 15000; // a collected crystal comes back somewhere else after this (ms)
+
+// One entry per square on the map:
+const biome = new Uint8Array(N * N);               // which zone it belongs to
+const shade = new Uint8Array(N * N);               // 0-3: tiny colour variation so the floor isn't flat
+const tile = new Uint8Array(N * N);                // 0 = open floor, 1 = wall
+const portalTo = new Int32Array(N * N).fill(-1);   // for portal squares: where you pop out
+const portalColor = {};                            // for portal squares: its colour
+
+const START1 = { x: p1.x, y: p1.y };
+const START2 = { x: p2.x, y: p2.y };
+
+function rand(n) {                                 // a random whole number from 0 to n-1
+  return Math.floor(Math.random() * n);
+}
+function openCell(x, y) {                          // turn a square into open floor
+  if (x >= 0 && y >= 0 && x < N && y < N) tile[y * N + x] = 0;
+}
+
+// Step 1: split the world into zones. We drop random "seed" points and every
+// square joins the zone of its nearest seed.
+const seeds = [];
+for (let i = 0; i < 14; i++) {
+  seeds.push({ x: rand(N), y: rand(N), b: i < BIOMES.length ? i : rand(BIOMES.length) });
+}
+for (let y = 0; y < N; y++) {
+  for (let x = 0; x < N; x++) {
+    let best = 0, bestDist = Infinity;
+    for (let i = 0; i < seeds.length; i++) {
+      const d = (x - seeds[i].x) ** 2 + (y - seeds[i].y) ** 2;
+      if (d < bestDist) { bestDist = d; best = i; }
+    }
+    biome[y * N + x] = seeds[best].b;
+    shade[y * N + x] = rand(4);
+  }
+}
+
+// Step 2: build the walls
+const ruinSpots = [];   // a spot inside each ruin (we put a crystal there)
+
+function buildWalls() {
+  tile.fill(0);
+  ruinSpots.length = 0;
+
+  // Clumps of rocks and trees
+  for (let i = 0; i < NUM_ROCK_CLUMPS; i++) {
+    const cx = rand(N), cy = rand(N), r = 1 + rand(4);
+    for (let y = cy - r; y <= cy + r; y++) {
+      for (let x = cx - r; x <= cx + r; x++) {
+        if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        if (Math.hypot(x - cx, y - cy) <= r && Math.random() < 0.85) tile[y * N + x] = 1;
+      }
+    }
+  }
+
+  // Ruins: a walled room with three doorways
+  for (let i = 0; i < NUM_RUINS; i++) {
+    const w = 7 + rand(7), h = 6 + rand(6);
+    const rx = 2 + rand(N - w - 4), ry = 2 + rand(N - h - 4);
+    for (let y = ry; y < ry + h; y++) {
+      for (let x = rx; x < rx + w; x++) {
+        const isEdge = (x === rx || x === rx + w - 1 || y === ry || y === ry + h - 1);
+        tile[y * N + x] = isEdge ? 1 : 0;
+      }
+    }
+    const doors = [
+      { x: rx + 1 + rand(w - 2), y: ry,         ox: 0,  oy: -1 },   // top
+      { x: rx + 1 + rand(w - 2), y: ry + h - 1, ox: 0,  oy: 1 },    // bottom
+      Math.random() < 0.5
+        ? { x: rx,         y: ry + 1 + rand(h - 2), ox: -1, oy: 0 } // left
+        : { x: rx + w - 1, y: ry + 1 + rand(h - 2), ox: 1,  oy: 0 } // right
+    ];
+    for (const d of doors) {
+      for (let k = 0; k <= 2; k++) openCell(d.x + d.ox * k, d.y + d.oy * k);   // door + 2 squares outside it
+    }
+    ruinSpots.push({ x: rx + 1 + rand(w - 2), y: ry + 1 + rand(h - 2) });
+  }
+
+  // Keep both starting areas clear
+  for (const s of [START1, START2]) {
+    for (let dy = -5; dy <= 5; dy++) {
+      for (let dx = -5; dx <= 5; dx++) openCell(s.x + dx, s.y + dy);
+    }
+  }
+
+  // Lava pools (tile type 2), only in zones marked as lava zones (the Volcano)
+  let pools = 0;
+  for (let tries = 0; tries < 3000 && pools < NUM_LAVA_POOLS; tries++) {
+    const cx = rand(N), cy = rand(N);
+    if (!BIOMES[biome[cy * N + cx]].lava) continue;
+    pools++;
+    const r = 1 + rand(3);
+    for (let y = cy - r; y <= cy + r; y++) {
+      for (let x = cx - r; x <= cx + r; x++) {
+        if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        if (Math.hypot(x - cx, y - cy) > r) continue;
+        if (tile[y * N + x] !== 0) continue;   // only turn open floor into lava
+        if (Math.hypot(x - START1.x, y - START1.y) < 8) continue;
+        if (Math.hypot(x - START2.x, y - START2.y) < 8) continue;
+        tile[y * N + x] = 2;
+      }
+    }
+  }
+}
+
+// Step 3: any open pocket you can't walk to from the start gets filled in,
+// so nobody can ever get trapped. Returns true if the CPU's start is reachable.
+function fillUnreachable() {
+  const reached = new Uint8Array(N * N);
+  const stack = [START1.y * N + START1.x];
+  reached[stack[0]] = 1;
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    const cx = cur % N, cy = (cur / N) | 0;
+    for (let d = 0; d < 4; d++) {
+      const nx = cx + DIRS[d][0], ny = cy + DIRS[d][1];
+      if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+      const idx = ny * N + nx;
+      if (tile[idx] !== 0 || reached[idx]) continue;   // walls and lava aren't walkable
+      reached[idx] = 1;
+      stack.push(idx);
+    }
+  }
+  for (let i = 0; i < N * N; i++) {
+    if (tile[i] === 0 && !reached[i]) tile[i] = 1;
+  }
+  return reached[START2.y * N + START2.x] === 1;
+}
+
+for (let attempt = 0; attempt < 20; attempt++) {   // try again if a layout is bad
+  buildWalls();
+  if (fillUnreachable()) break;
+}
+
+// A list of every open square (handy for placing things)
+const openCells = [];
+for (let i = 0; i < N * N; i++) {
+  if (tile[i] === 0) openCells.push(i);
+}
+
+// Squares in zones that attract crystals (the Crystal Caves)
+const caveCells = openCells.filter(i => BIOMES[biome[i]].crystalBias);
+
+// Step 4: portals come in pairs. Step on one, pop out of the other.
+const portalCells = [];
+function farFromStarts(idx) {
+  const x = idx % N, y = (idx / N) | 0;
+  return Math.hypot(x - START1.x, y - START1.y) > 10 && Math.hypot(x - START2.x, y - START2.y) > 10;
+}
+for (let i = 0; i < PORTAL_COLORS.length; i++) {
+  let a, b, tries = 0;
+  do {
+    a = openCells[rand(openCells.length)];
+    b = openCells[rand(openCells.length)];
+    tries++;
+  } while (tries < 300 && (
+    portalTo[a] >= 0 || portalTo[b] >= 0 || !farFromStarts(a) || !farFromStarts(b) ||
+    Math.hypot((a % N) - (b % N), ((a / N) | 0) - ((b / N) | 0)) < 50   // keep the two ends far apart
+  ));
+  if (a === b) continue;
+  portalTo[a] = b;
+  portalTo[b] = a;
+  portalColor[a] = portalColor[b] = PORTAL_COLORS[i];
+  portalCells.push(a, b);
+}
+
+// Step 5: crystals. Walk onto one to collect it.
+const crystals = [];          // list of {x, y}
+let crystalsCollected = 0;
+
+function spawnCrystal() {
+  for (let tries = 0; tries < 100; tries++) {
+    // half the time, pick a square in the Crystal Caves
+    const pool = (caveCells.length > 0 && Math.random() < 0.5) ? caveCells : openCells;
+    const idx = pool[rand(pool.length)];
+    const x = idx % N, y = (idx / N) | 0;
+    if (portalTo[idx] >= 0) continue;
+    if (crystals.some(c => c.x === x && c.y === y)) continue;
+    crystals.push({ x: x, y: y });
+    return;
+  }
+}
+for (const r of ruinSpots) {   // one crystal hidden inside each ruin (if it's still reachable)
+  if (tile[r.y * N + r.x] === 0 && portalTo[r.y * N + r.x] < 0) crystals.push({ x: r.x, y: r.y });
+}
+while (crystals.length < NUM_CRYSTALS) spawnCrystal();
+
+// Picking one up refills all your abilities and slows the CPU for 8 seconds
+function collectCrystals() {
+  for (let i = 0; i < crystals.length; i++) {
+    if (crystals[i].x === p1.x && crystals[i].y === p1.y) {
+      crystals.splice(i, 1);
+      crystalsCollected++;
+      mineCount = MAX_MINES;
+      pulseReadyAt = 0;
+      dashReadyAt = 0;
+      decoyReadyAt = 0;
+      slowedUntil = Math.max(slowedUntil, Date.now() + 8000);
+      showBanner("Crystal! Abilities refilled, CPU slowed");
+      setTimeout(spawnCrystal, CRYSTAL_RESPAWN);
+      return;
+    }
+  }
+}
+
+// A tiny picture of the whole map for the minimap (one pixel per square)
+const mapImg = document.createElement("canvas");
+mapImg.width = N;
+mapImg.height = N;
+const mctx = mapImg.getContext("2d");
+for (let i = 0; i < N * N; i++) {
+  const b = BIOMES[biome[i]];
+  mctx.fillStyle = tile[i] === 1 ? b.top : (tile[i] === 2 ? "#ff7a1a" : b.floor[0]);
+  mctx.fillRect(i % N, (i / N) | 0, 1, 1);
+}
+for (const idx of portalCells) {
+  mctx.fillStyle = portalColor[idx];
+  mctx.fillRect((idx % N) - 1, ((idx / N) | 0) - 1, 3, 3);
+}
+
+// Pathfinding: the CPU finds the shortest route around walls (and through
+// portals) to a target square. It works like a ripple spreading out from the
+// CPU, one step at a time, until the ripple touches the target.
+const seen = new Int32Array(N * N);       // "have we visited this square in THIS search?"
+const firstDir = new Uint8Array(N * N);   // which first step leads to each square
+const queue = new Int32Array(N * N);
+let searchId = 0;
+
+function nextStepToward(fromX, fromY, toX, toY) {   // returns 0-3 (a direction) or -1
+  if (fromX === toX && fromY === toY) return -1;
+  searchId++;
+  const start = fromY * N + fromX, goal = toY * N + toX;
+  let head = 0, tail = 0;
+  queue[tail++] = start;
+  seen[start] = searchId;
+  while (head < tail) {
+    const cur = queue[head++];
+    const cx = cur % N, cy = (cur / N) | 0;
+    for (let d = 0; d < 4; d++) {
+      const nx = cx + DIRS[d][0], ny = cy + DIRS[d][1];
+      if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+      let idx = ny * N + nx;
+      if (tile[idx] !== 0) continue;   // the CPU walks around walls AND lava                 // walls block the way
+      if (portalTo[idx] >= 0) idx = portalTo[idx];   // a portal pops you out at its partner
+      if (seen[idx] === searchId) continue;
+      seen[idx] = searchId;
+      firstDir[idx] = (cur === start) ? d : firstDir[cur];
+      if (idx === goal) return firstDir[idx];
+      queue[tail++] = idx;
+    }
+  }
+  return -1;   // no route found
+}
+
+// ---- TOOLS AND WEAPONS ----
+// The CPU can never be destroyed. You can only SLOW it down.
+const SLOW_FACTOR = 3;        // while slowed, the CPU waits 3x longer between steps
+const SLOW_TIME = 5000;       // how long a slow lasts, in milliseconds
+let slowedUntil = 0;          // the clock time when the slow wears off
+
+// Tool: mines. Press SPACE to drop one where you stand.
+const MAX_MINES = 5;
+let mineCount = MAX_MINES;
+const mines = [];             // list of squares that have a mine on them
+setInterval(() => {           // you get one mine back every 2 seconds
+  if (mineCount < MAX_MINES) mineCount++;
+}, 2000);
+
+function dropMine() {
+  if (mineCount <= 0) return;
+  mines.push({ x: p1.x, y: p1.y });
+  mineCount--;
+}
+
+// Weapon: slow pulse. Press E to blast a ring around you.
+const PULSE_RANGE = 12;       // how many squares away it reaches
+const PULSE_COOLDOWN = 3000;  // waiting time between uses
+let pulseReadyAt = 0;
+let pulseFlashUntil = 0;      // only used to draw the ring
+
+function firePulse() {
+  const now = Date.now();
+  if (now < pulseReadyAt) return;          // still recharging
+  pulseReadyAt = now + PULSE_COOLDOWN;
+  pulseFlashUntil = now + 300;
+  const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  if (distance <= PULSE_RANGE) slowedUntil = now + SLOW_TIME;
+}
+
+// Ability: dash. Press F to leap forward in the direction you last moved.
+const DASH_DISTANCE = 5;      // how many squares you leap
+const DASH_COOLDOWN = 2500;   // waiting time between dashes
+let dashReadyAt = 0;
+
+function dash() {
+  const now = Date.now();
+  if (now < dashReadyAt) return;                    // still recharging
+  if (p1.dirX === 0 && p1.dirY === 0) return;       // you haven't moved yet
+  dashReadyAt = now + DASH_COOLDOWN;
+  for (let i = 0; i < DASH_DISTANCE; i++) {
+    move(p1, p1.dirX, p1.dirY);                     // take 5 steps at once
+  }
+}
+
+// Ability: decoy. Press Q to drop a fake you. The CPU chases the fake
+// instead of the real you. If the CPU reaches it, the CPU gets slowed.
+const DECOY_TIME = 4000;       // how long the decoy lasts
+const DECOY_COOLDOWN = 6000;  // waiting time between decoys
+let decoy = null;              // either nothing, or {x, y, until}
+let decoyReadyAt = 0;
+
+function dropDecoy() {
+  const now = Date.now();
+  if (now < decoyReadyAt) return;
+  decoyReadyAt = now + DECOY_COOLDOWN;
+  decoy = { x: p1.x, y: p1.y, until: now + DECOY_TIME };
+}
+
+// ---- SETUP THE DRAWING AREA ----
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// ---- MOVEMENT ----
+// You (blue): W A S D
+function move(player, dx, dy) {
+  player.dirX = dx;   // remember the direction we just moved
+  player.dirY = dy;
+  // Math.max / Math.min keep the dot inside the grid
+  const nx = Math.max(0, Math.min(GRID_SIZE - 1, player.x + dx));
+  const ny = Math.max(0, Math.min(GRID_SIZE - 1, player.y + dy));
+  const ground = tile[ny * N + nx];
+  if (ground === 1) return;                    // a wall is in the way: stay put
+  if (ground === 2 && player !== p1) return;   // the CPU won't walk into lava
+
+  player.x = nx;
+  player.y = ny;
+
+  if (ground === 2) {                          // YOU stepped in lava!
+    newRound("Burned in lava!");
+    return;
+  }
+
+  // Stepped on a portal? Pop out of its partner (and snap the camera there)
+  const exit = portalTo[ny * N + nx];
+  if (exit >= 0) {
+    player.x = exit % N;
+    player.y = (exit / N) | 0;
+    player.drawX = player.x;
+    player.drawY = player.y;
+  }
+
+  if (player === p1) collectCrystals();   // grab a crystal if we're standing on one
+}
+
+// ---- KEYBOARD ----
+// We keep a list of which movement keys are being held, and the game moves
+// you itself on a steady beat. That way, pressing an ability key never
+// interrupts your movement.
+const MOVE_DELAY = 70;     // ms between steps while you hold a key (smaller = faster you)
+const moveKeys = {         // which direction each key means: [sideways, up/down]
+  w: [0, -1],
+  s: [0, 1],
+  a: [-1, 0],
+  d: [1, 0]
+};
+let heldKeys = [];         // movement keys held right now, oldest first
+let lastMoveAt = 0;
+
+function tryMove() {
+  if (heldKeys.length === 0) return;
+  const now = Date.now();
+  if (now - lastMoveAt < MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed) return;   // mud makes this longer, ice shorter   // too soon for another step
+  lastMoveAt = now;
+  const dir = moveKeys[heldKeys[heldKeys.length - 1]];   // the newest held key wins
+  move(p1, dir[0], dir[1]);
+}
+setInterval(tryMove, 10);   // check for a step every 10 milliseconds
+
+window.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+
+  // Movement keys: add to the held list (and step right away on a fresh press)
+  if (moveKeys.hasOwnProperty(key) && !heldKeys.includes(key)) {
+    heldKeys.push(key);
+    tryMove();
+  }
+
+  // Ability keys: these don't touch the movement list at all
+  if (key === " " && !e.repeat) dropMine();   // Space: drop a mine
+  if (key === " ") e.preventDefault();         // stop the page scrolling
+  if (key === "f") dash();                     // F: dash forward
+  if (key === "q") dropDecoy();                // Q: drop a decoy
+  if (key === "e") firePulse();                // E: slow pulse
+});
+
+window.addEventListener("keyup", (e) => {
+  const key = e.key.toLowerCase();
+  heldKeys = heldKeys.filter(k => k !== key);   // that key is no longer held
+});
+
+// If you click away from the page, forget any held keys
+window.addEventListener("blur", () => { heldKeys = []; });
+
+// ---- THE CPU (red dot) ----
+// Every so often, the red dot takes one step toward you.
+
+// ---- DIFFICULTY ----
+// The longer you survive, the faster and sneakier the CPU gets.
+const START_DELAY = 250;   // CPU time between steps at the start of a round (ms)
+const MIN_DELAY = 55;      // the CPU never gets faster than this
+const SPEED_UP = 14;       // every second you survive, the delay shrinks by this many ms
+const MAX_LEAD = 6;        // the most squares ahead of you the CPU will aim
+let roundStart = Date.now();   // when this round began
+let bestTime = 0;              // your longest survival so far, in seconds
+
+function secondsSurvived() {
+  return (Date.now() - roundStart) / 1000;
+}
+
+// How long the CPU waits between steps right now
+function currentCpuDelay() {
+  let delay = Math.max(MIN_DELAY, START_DELAY - secondsSurvived() * SPEED_UP);
+  delay *= BIOMES[biome[p2.y * N + p2.x]].speed;   // mud slows the CPU, ice speeds it up
+  if (Date.now() < slowedUntil) delay *= SLOW_FACTOR;   // slowed by a mine or pulse
+  return delay;
+}
+
+// How many squares ahead of you the CPU aims (grows by 1 every 3 seconds)
+function cpuLead() {
+  return Math.min(MAX_LEAD, Math.floor(secondsSurvived() / 3));
+}
+
+// ---- ON-SCREEN MESSAGES ----
+let bannerText = "";
+let bannerUntil = 0;
+function showBanner(text, ms) {
+  bannerText = text;
+  bannerUntil = Date.now() + (ms || 3000);
+}
+
+// Starts a fresh round. "reason" is the message shown on screen.
+function newRound(reason) {
+  const lasted = secondsSurvived();
+  bestTime = Math.max(bestTime, lasted);
+  showBanner(reason + "  You survived " + lasted.toFixed(1) + "s");
+  roundStart = Date.now();
+  slowedUntil = 0;
+  mines.length = 0;
+  mineCount = MAX_MINES;
+  pulseReadyAt = 0;
+  dashReadyAt = 0;
+  decoyReadyAt = 0;
+  decoy = null;
+  p1.dirX = 0;  p1.dirY = 0;
+  p1.x = START1.x;  p1.y = START1.y;
+  p2.x = START2.x;  p2.y = START2.y;
+  for (const p of [p1, p2]) {
+    p.drawX = p.x;
+    p.drawY = p.y;
+  }
+}
+
+showBanner("Collect crystals, use portals, avoid lava!", 6000);
+
+function cpuStep() {
+  // The CPU doesn't only chase where you ARE. As time goes on it also aims
+  // ahead of where you're GOING (it remembers your last move direction).
+  const lead = cpuLead();
+  const closeUp = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y) <= lead + 1;
+  let targetX = p1.x;
+  let targetY = p1.y;
+  if (!closeUp) {   // when it's close, it just goes straight for you
+    targetX = Math.max(0, Math.min(GRID_SIZE - 1, p1.x + p1.dirX * lead));
+    targetY = Math.max(0, Math.min(GRID_SIZE - 1, p1.y + p1.dirY * lead));
+  }
+  // A decoy pulls the CPU away from you
+  if (decoy && Date.now() > decoy.until) decoy = null;   // decoy ran out of time
+  if (decoy) {
+    targetX = decoy.x;
+    targetY = decoy.y;
+  }
+  // If the "aim ahead" spot is inside a wall, just aim at you instead
+  if (tile[targetY * N + targetX] !== 0) {
+    targetX = p1.x;
+    targetY = p1.y;
+  }
+
+  // Work out the shortest route (around walls, through portals) and take one step
+  let dir = nextStepToward(p2.x, p2.y, targetX, targetY);
+  if (dir === -1 && (targetX !== p1.x || targetY !== p1.y)) {
+    dir = nextStepToward(p2.x, p2.y, p1.x, p1.y);   // couldn't reach that spot: go for you
+  }
+  if (dir !== -1) move(p2, DIRS[dir][0], DIRS[dir][1]);
+
+  // If the CPU steps on a mine, the mine goes off and slows it down
+  for (let i = mines.length - 1; i >= 0; i--) {
+    if (mines[i].x === p2.x && mines[i].y === p2.y) {
+      mines.splice(i, 1);                       // remove the used mine
+      slowedUntil = Date.now() + SLOW_TIME;
+    }
+  }
+
+  // If the CPU reaches the decoy, it falls for it and gets slowed
+  if (decoy && decoy.x === p2.x && decoy.y === p2.y) {
+    decoy = null;
+    slowedUntil = Date.now() + SLOW_TIME;
+  }
+
+  // If the CPU lands on you, send both dots back to their starting sides
+  if (p1.x === p2.x && p1.y === p2.y) {
+    newRound("Caught!");
+  }
+}
+
+// Take a step, then wait. The wait is longer while the CPU is slowed.
+function cpuLoop() {
+  cpuStep();
+  setTimeout(cpuLoop, currentCpuDelay());
+}
+cpuLoop();
+
+// ---- DRAWING ----
+function drawDot(cx, cy, color, radius) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";   // dark outline so dots show on any floor
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function draw() {
+  // Each frame, slide the shown position 20% of the way to the real one.
+  // Bigger number = snappier, smaller number = floatier.
+  const SMOOTHING = 0.2;
+  for (const p of [p1, p2]) {
+    p.drawX += (p.x - p.drawX) * SMOOTHING;
+    p.drawY += (p.y - p.drawY) * SMOOTHING;
+  }
+
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // The "camera" follows player 1: we figure out where the screen's
+  // top-left corner sits inside the big grid.
+  const camX = p1.drawX * CELL + CELL / 2 - canvas.width / 2;
+  const camY = p1.drawY * CELL + CELL / 2 - canvas.height / 2;
+
+  // Only draw the grid lines that are actually visible on screen
+  const firstCol = Math.max(0, Math.floor(camX / CELL));
+  const lastCol  = Math.min(GRID_SIZE, Math.ceil((camX + canvas.width) / CELL));
+  const firstRow = Math.max(0, Math.floor(camY / CELL));
+  const lastRow  = Math.min(GRID_SIZE, Math.ceil((camY + canvas.height) / CELL));
+
+  const clock = Date.now() / 1000;   // seconds, used for pulsing animations
+
+  // Draw the terrain: floor colour for every square on screen, plus walls and lava
+  for (let row = firstRow; row < lastRow; row++) {
+    for (let col = firstCol; col < lastCol; col++) {
+      const idx = row * N + col;
+      const zone = BIOMES[biome[idx]];
+      const sx = col * CELL - camX;
+      const sy = row * CELL - camY;
+      ctx.fillStyle = zone.floor[shade[idx]];
+      ctx.fillRect(sx, sy, CELL, CELL);
+
+      // Little details so you can SEE the terrain effects
+      if (tile[idx] === 0 && shade[idx] === 0 && zone.speed !== 1) {
+        if (zone.speed > 1) {   // mud: a dark puddle
+          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+          ctx.beginPath();
+          ctx.ellipse(sx + CELL / 2, sy + CELL / 2, CELL * 0.3, CELL * 0.18, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {                // ice: a white glint
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx + 10, sy + CELL - 12);
+          ctx.lineTo(sx + CELL - 14, sy + 12);
+          ctx.stroke();
+        }
+      }
+
+      // Lava: red-orange, with a glowing centre that pulses
+      if (tile[idx] === 2) {
+        ctx.fillStyle = "#b53210";
+        ctx.fillRect(sx, sy, CELL, CELL);
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(clock * 2 + idx);
+        ctx.fillStyle = "#ffa940";
+        ctx.fillRect(sx + 6, sy + 6, CELL - 12, CELL - 12);
+        ctx.globalAlpha = 1;
+      }
+
+      if (tile[idx] === 1) {
+        ctx.fillStyle = zone.wall;
+        ctx.fillRect(sx, sy, CELL, CELL);
+        ctx.fillStyle = zone.top;
+        ctx.fillRect(sx + 4, sy + 4, CELL - 8, CELL - 10);   // looks like a raised block
+      }
+    }
+  }
+
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";   // faint grid lines on top of the terrain
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let col = firstCol; col <= lastCol; col++) {
+    const sx = col * CELL - camX;
+    ctx.moveTo(sx, firstRow * CELL - camY);
+    ctx.lineTo(sx, lastRow * CELL - camY);
+  }
+  for (let row = firstRow; row <= lastRow; row++) {
+    const sy = row * CELL - camY;
+    ctx.moveTo(firstCol * CELL - camX, sy);
+    ctx.lineTo(lastCol * CELL - camX, sy);
+  }
+  ctx.stroke();
+
+  // Draw the portals: a glowing, pulsing ring in the colour of its pair
+  for (const idx of portalCells) {
+    const px = (idx % N) * CELL + CELL / 2 - camX;
+    const py = ((idx / N) | 0) * CELL + CELL / 2 - camY;
+    if (px < -CELL || py < -CELL || px > canvas.width + CELL || py > canvas.height + CELL) continue;
+    const pulse = 1 + 0.12 * Math.sin(clock * 4 + idx);
+    ctx.fillStyle = portalColor[idx];
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.arc(px, py, CELL * 0.55 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = portalColor[idx];
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(px, py, CELL * 0.38 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(px, py, CELL * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw the crystals: little cyan gems that bob up and down
+  for (const c of crystals) {
+    const gx = c.x * CELL + CELL / 2 - camX;
+    const gy = c.y * CELL + CELL / 2 - camY + Math.sin(clock * 3 + c.x) * 3;
+    if (gx < -CELL || gy < -CELL || gx > canvas.width + CELL || gy > canvas.height + CELL) continue;
+    ctx.fillStyle = "#7dffea";
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - 13);
+    ctx.lineTo(gx + 8, gy);
+    ctx.lineTo(gx, gy + 13);
+    ctx.lineTo(gx - 8, gy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Bold lines every 10 squares
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let col = firstCol; col <= lastCol; col++) {
+    if (col % 10 !== 0) continue;
+    const sx = col * CELL - camX;
+    ctx.moveTo(sx, firstRow * CELL - camY);
+    ctx.lineTo(sx, lastRow * CELL - camY);
+  }
+  for (let row = firstRow; row <= lastRow; row++) {
+    if (row % 10 !== 0) continue;
+    const sy = row * CELL - camY;
+    ctx.moveTo(firstCol * CELL - camX, sy);
+    ctx.lineTo(lastCol * CELL - camX, sy);
+  }
+  ctx.stroke();
+
+  // Number labels where the bold lines cross, like "50,100"
+  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.font = "12px monospace";
+  for (let col = firstCol; col <= lastCol; col++) {
+    for (let row = firstRow; row <= lastRow; row++) {
+      if (col % 10 === 0 && row % 10 === 0) {
+        ctx.fillText(col + "," + row, col * CELL - camX + 4, row * CELL - camY + 14);
+      }
+    }
+  }
+
+  // Draw the grid's outer edge brighter so you can see where it ends
+  ctx.strokeStyle = "#888";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(-camX, -camY, GRID_SIZE * CELL, GRID_SIZE * CELL);
+
+  // Draw the mines as little yellow diamonds
+  ctx.fillStyle = "#ffd23f";
+  for (const m of mines) {
+    const mx = m.x * CELL + CELL / 2 - camX;
+    const my = m.y * CELL + CELL / 2 - camY;
+    ctx.beginPath();
+    ctx.moveTo(mx, my - 10);
+    ctx.lineTo(mx + 10, my);
+    ctx.lineTo(mx, my + 10);
+    ctx.lineTo(mx - 10, my);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Draw the decoy as a see-through green dot
+  if (decoy && Date.now() < decoy.until) {
+    drawDot(
+      decoy.x * CELL + CELL / 2 - camX,
+      decoy.y * CELL + CELL / 2 - camY,
+      "rgba(80, 255, 150, 0.5)", CELL * 0.35
+    );
+  }
+
+  // Draw the pulse ring: it grows outward and fades
+  const now = Date.now();
+  if (now < pulseFlashUntil) {
+    const t = 1 - (pulseFlashUntil - now) / 300;   // goes from 0 to 1
+    ctx.strokeStyle = "rgba(120, 200, 255, " + (1 - t) + ")";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(
+      p1.drawX * CELL + CELL / 2 - camX,
+      p1.drawY * CELL + CELL / 2 - camY,
+      t * PULSE_RANGE * CELL, 0, Math.PI * 2
+    );
+    ctx.stroke();
+  }
+
+  // Draw both dots
+  for (const p of [p1, p2]) {
+    drawDot(p.drawX * CELL + CELL / 2 - camX, p.drawY * CELL + CELL / 2 - camY, (p === p2 && now < slowedUntil) ? "#9b7bff" : p.color, CELL * 0.35);
+  }
+
+  // A dark panel behind the text so it's readable on any terrain
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(8, 8, 290, 278);
+
+  // Show your position in the top-left corner
+  ctx.fillStyle = "#fff";
+  ctx.font = "16px monospace";
+  ctx.fillText("You: " + p1.x + ", " + p1.y, 16, 28);
+
+  const pulseWait = Math.max(0, Math.ceil((pulseReadyAt - Date.now()) / 1000));
+  ctx.fillText("Mines [Space]: " + mineCount + "/" + MAX_MINES, 16, 52);
+  ctx.fillText("Pulse [E]: " + (pulseWait === 0 ? "READY" : pulseWait + "s"), 16, 76);
+  ctx.fillText("CPU: " + (Date.now() < slowedUntil ? "SLOWED" : "normal"), 16, 100);
+  ctx.fillText("CPU speed: " + (1000 / currentCpuDelay()).toFixed(1) + " steps/sec", 16, 124);
+  ctx.fillText("Survived: " + secondsSurvived().toFixed(1) + "s   Best: " + bestTime.toFixed(1) + "s", 16, 148);
+
+  const dashWait = Math.max(0, Math.ceil((dashReadyAt - Date.now()) / 1000));
+  const decoyWait = Math.max(0, Math.ceil((decoyReadyAt - Date.now()) / 1000));
+  ctx.fillText("Dash [F]: " + (dashWait === 0 ? "READY" : dashWait + "s"), 16, 172);
+  ctx.fillText("Decoy [Q]: " + (decoyWait === 0 ? "READY" : decoyWait + "s"), 16, 196);
+  const here = BIOMES[biome[p1.y * N + p1.x]];
+  ctx.fillText("Zone: " + here.name, 16, 220);
+  ctx.fillText("Crystals: " + crystalsCollected, 16, 244);
+  if (here.note) {
+    ctx.fillStyle = "#ffd23f";   // yellow so it stands out
+    ctx.fillText(here.note, 16, 268);
+    ctx.fillStyle = "#fff";
+  }
+
+  // Big message near the top of the screen (caught, crystal, etc.)
+  if (Date.now() < bannerUntil) {
+    ctx.font = "bold 28px monospace";
+    const bw = ctx.measureText(bannerText).width;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.fillRect(canvas.width / 2 - bw / 2 - 20, 40, bw + 40, 56);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(bannerText, canvas.width / 2 - bw / 2, 78);
+  }
+
+  // Controls reminder along the bottom
+  ctx.font = "14px monospace";
+  const help = "WASD move   Space mine   E pulse   F dash   Q decoy";
+  const hw = ctx.measureText(help).width;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+  ctx.fillRect(canvas.width / 2 - hw / 2 - 12, canvas.height - 40, hw + 24, 28);
+  ctx.fillStyle = "#ddd";
+  ctx.fillText(help, canvas.width / 2 - hw / 2, canvas.height - 21);
+
+  drawMinimap();
+  requestAnimationFrame(draw);
+}
+
+// A small map in the corner so you can see where BOTH dots are
+function drawMinimap() {
+  const size = 200, pad = 16;
+  const left = canvas.width - size - pad;
+  const top = pad;
+  ctx.imageSmoothingEnabled = false;                 // keep the little map crisp
+  ctx.drawImage(mapImg, left, top, size, size);      // the picture of the whole world
+  ctx.fillStyle = "#7dffea";                         // crystals show as cyan dots
+  for (const c of crystals) {
+    ctx.fillRect(left + (c.x / N) * size - 1, top + (c.y / N) * size - 1, 3, 3);
+  }
+  ctx.strokeStyle = "#888";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(left, top, size, size);
+  for (const p of [p1, p2]) {
+    drawDot(left + (p.x / GRID_SIZE) * size, top + (p.y / GRID_SIZE) * size, p.color, 4);
+  }
+}
+
+draw();
+</script>
+</body>
+</html>
