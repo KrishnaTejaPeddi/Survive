@@ -2,18 +2,472 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Big Grid</title>
+<title>GRIDLOCK</title>
 <style>
+  :root {
+    --text: #eef3ff;
+    --dim: #8f9dba;
+    --line: rgba(255, 255, 255, 0.14);
+    --faint: rgba(255, 255, 255, 0.08);
+    --blue: #4da3ff;
+    --red: #ff5c5c;
+    --violet: #9b7bff;
+    --bar: max(46px, 6.5vh);
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  * { box-sizing: border-box; }
   body { margin: 0; background: #111; overflow: hidden; }
   canvas { display: block; }
+  button { font-family: inherit; }
+
+  /* ================= MENU SHELL ================= */
+  #ui {
+    position: fixed; inset: 0; z-index: 10; overflow: hidden; overflow: clip;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--text); -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none; user-select: none;
+    transition: opacity 0.3s ease;
+  }
+  #ui.fade-out { opacity: 0; pointer-events: none; }
+  #ui.hidden { display: none; }
+
+  /* The darkened, blurred world behind everything. Darker on the left so text is readable,
+     clearer on the right so you can see the world. */
+  .backdrop {
+    position: absolute; inset: 0; transition: background 0.4s ease;
+    -webkit-backdrop-filter: blur(3px) saturate(1.25); backdrop-filter: blur(3px) saturate(1.25);
+    background:
+      radial-gradient(ellipse at 72% 50%, rgba(0, 0, 0, 0) 0%, rgba(2, 4, 10, 0.55) 100%),
+      linear-gradient(90deg, rgba(3, 5, 12, 0.94) 0%, rgba(3, 5, 12, 0.78) 32%, rgba(3, 5, 12, 0.25) 62%, rgba(3, 5, 12, 0.1) 100%);
+  }
+  #ui[data-screen="splash"] .backdrop {
+    -webkit-backdrop-filter: blur(5px) saturate(1.2); backdrop-filter: blur(5px) saturate(1.2);
+    background: radial-gradient(ellipse at 50% 46%, rgba(3, 5, 12, 0.52) 0%, rgba(2, 3, 9, 0.93) 100%);
+  }
+  #ui[data-screen="howto"] .backdrop, #ui[data-screen="settings"] .backdrop {
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    background: radial-gradient(ellipse at 50% 45%, rgba(4, 6, 14, 0.72) 0%, rgba(2, 3, 9, 0.94) 100%);
+  }
+  #ui.paused .backdrop {
+    -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+    background: rgba(4, 6, 14, 0.68);
+  }
+
+  .grade { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+    background: linear-gradient(115deg, rgba(60, 90, 255, 0.1), rgba(255, 60, 110, 0.06) 70%, rgba(0, 0, 0, 0)); }
+  #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .scan { position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px); }
+  .grain {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grain 0.9s steps(6) infinite;
+  }
+  @keyframes grain {
+    0% { background-position: 0 0; } 20% { background-position: -40px 30px; } 40% { background-position: 30px -50px; }
+    60% { background-position: -60px -20px; } 80% { background-position: 50px 40px; } 100% { background-position: 0 0; }
+  }
+  #ui.fx-off .grain, #ui.fx-off .scan, #ui.fx-off #fx, #ui.fx-off .grade { display: none; }
+
+  /* ---- Letterbox bars (top and bottom) ---- */
+  .bar {
+    position: absolute; left: 0; right: 0; z-index: 3; height: var(--bar);
+    display: flex; align-items: center; gap: 28px; padding: 0 clamp(20px, 4vw, 56px);
+    font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim);
+  }
+  .bar.top { top: 0; justify-content: space-between; background: linear-gradient(rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.7)); border-bottom: 1px solid var(--faint); animation: barTop 0.9s var(--ease) both; }
+  .bar.bottom { bottom: 0; background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.92)); border-top: 1px solid var(--faint); animation: barBottom 0.9s var(--ease) both; }
+  @keyframes barTop { from { transform: translateY(-100%); } }
+  @keyframes barBottom { from { transform: translateY(100%); } }
+  .brand { display: inline-flex; align-items: center; color: #fff; font-weight: 800; }
+  .brand i { width: 14px; height: 14px; margin-right: 12px; border: 2px solid var(--blue); border-radius: 3px; box-shadow: 0 0 10px rgba(77, 163, 255, 0.6); }
+  .live { display: inline-flex; align-items: center; gap: 10px; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 10px var(--red); animation: pulse 1.6s ease-in-out infinite; }
+  .live b { color: #fff; font-weight: 700; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+  .hints { display: flex; gap: 22px; flex: none; }
+  .hints span { display: inline-flex; align-items: center; gap: 6px; }
+  .hints kbd { min-width: 24px; height: 24px; font-size: 11px; padding: 0 6px; }
+  .tip { flex: 1; text-align: center; letter-spacing: 0.06em; text-transform: none; font-size: 13px; transition: opacity 0.4s ease; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .tip.fade { opacity: 0; }
+  .ver { flex: none; opacity: 0.55; }
+  @media (max-width: 820px) { .hints { display: none; } }
+
+  /* ================= SCREENS ================= */
+  .screen {
+    position: absolute; inset: 0; z-index: 2; display: none;
+    padding: calc(var(--bar) + 16px) clamp(20px, 6vw, 100px);
+  }
+  .screen.active { display: flex; }
+  #screen-main.active { align-items: center; justify-content: flex-start; }
+  #screen-splash.active { flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; }
+  #screen-howto.active, #screen-settings.active, #screen-pause.active { align-items: center; justify-content: center; }
+
+  .rise { animation: rise 0.8s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms + 60ms); }
+  @keyframes rise { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+  /* ---- The GRIDLOCK wordmark ---- */
+  .wordmark {
+    margin: 0; display: inline-flex; align-items: center; white-space: nowrap;
+    font-size: clamp(54px, 8.6vw, 136px); font-weight: 900; font-style: italic; text-transform: uppercase;
+    letter-spacing: 0.035em; line-height: 0.95;
+    background:
+      linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 150% 0 / 250% 100% no-repeat,
+      linear-gradient(180deg, #ffffff 0%, #e4edff 38%, #8db2ff 52%, #d6e4ff 64%, #ffffff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 22px rgba(90, 140, 255, 0.45)) drop-shadow(0 6px 0 rgba(10, 20, 60, 0.6));
+    animation: sweep 6s ease-in-out infinite, glitch 8s steps(1) infinite;
+  }
+  @keyframes sweep { from { background-position: 150% 0, 0 0; } to { background-position: -50% 0, 0 0; } }
+  @keyframes glitch {
+    0%, 91%, 100% { transform: none; }
+    92% { transform: translate(-4px, 0) skewX(-4deg); filter: drop-shadow(-4px 0 0 rgba(255, 60, 110, 0.85)) drop-shadow(4px 0 0 rgba(60, 165, 255, 0.85)); }
+    94% { transform: translate(3px, 1px); filter: drop-shadow(3px 0 0 rgba(255, 60, 110, 0.85)) drop-shadow(-3px 0 0 rgba(60, 165, 255, 0.85)); }
+    96% { transform: none; }
+  }
+  /* The "O": a ring where the blue dot chases the red dot forever */
+  .orbit { width: 0.8em; height: 0.8em; flex: none; margin: 0 0.03em; animation: spin 5s linear infinite; filter: drop-shadow(0 0 10px rgba(77, 163, 255, 0.6)); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .tagline {
+    display: flex; align-items: center; gap: 16px; margin-top: 18px;
+    font-size: clamp(12px, 1.1vw, 15px); letter-spacing: 0.5em; text-transform: uppercase; color: #b4c2e2; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+  }
+  .tagline::before { content: ""; width: 64px; height: 3px; background: linear-gradient(90deg, var(--blue), var(--red)); box-shadow: 0 0 14px rgba(120, 130, 255, 0.7); }
+  #screen-splash .wordmark { font-size: clamp(60px, 12vw, 190px); }
+  #screen-splash .tagline { justify-content: center; }
+  .press {
+    margin-top: clamp(44px, 10vh, 100px); padding-left: 0.5em;
+    font-size: 14px; letter-spacing: 0.5em; text-transform: uppercase; color: #f2f6ff; text-shadow: 0 0 14px rgba(120, 160, 255, 0.8), 0 1px 8px rgba(0, 0, 0, 0.9);
+    animation: blink 2.2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+  /* ---- Main menu list ---- */
+  .left { will-change: transform; }
+  .mlist { display: flex; flex-direction: column; gap: 6px; margin-top: clamp(28px, 5vh, 56px); }
+  .mitem {
+    position: relative; isolation: isolate; display: flex; align-items: center; gap: 20px;
+    width: min(480px, 84vw); padding: 15px 38px 15px 22px; border: 0; background: transparent;
+    color: #b4c0da; text-align: left; cursor: pointer;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+    transition: color 0.2s ease, transform 0.3s var(--ease);
+  }
+  .mitem::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(90deg, rgba(77, 163, 255, 0.36), rgba(122, 92, 255, 0.12) 60%, rgba(122, 92, 255, 0));
+    transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease);
+  }
+  .mitem::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(var(--blue), var(--violet)); box-shadow: 0 0 18px var(--blue);
+    transform: scaleY(0); transition: transform 0.25s ease;
+  }
+  .mitem.primary::after { transform: scaleY(1); opacity: 0.45; }
+  .mitem:hover, .mitem:focus-visible { outline: none; color: #fff; transform: translateX(16px); }
+  .mitem:hover::before, .mitem:focus-visible::before { transform: scaleX(1); }
+  .mitem:hover::after, .mitem:focus-visible::after { transform: scaleY(1); opacity: 1; }
+  .mitem:active { transform: translateX(16px) scale(0.985); }
+  .idx { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.32); transition: color 0.2s; }
+  .mitem:hover .idx, .mitem:focus-visible .idx { color: var(--blue); }
+  .mlabel { display: block; font-size: clamp(22px, 2.3vw, 32px); font-weight: 800; font-style: italic; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.1; }
+  .msub { display: block; margin-top: 4px; font-size: 12.5px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.36); transition: color 0.2s; }
+  .mitem:hover .msub, .mitem:focus-visible .msub { color: #a9bde6; }
+  .chev { margin-left: auto; font-size: 26px; line-height: 1; opacity: 0; transform: translateX(-8px); transition: opacity 0.2s, transform 0.25s var(--ease); }
+  .mitem:hover .chev, .mitem:focus-visible .chev { opacity: 0.9; transform: none; }
+
+  /* ---- Player record card ---- */
+  .card {
+    position: absolute; right: clamp(24px, 6vw, 110px); bottom: calc(var(--bar) + clamp(24px, 7vh, 80px)); width: 310px;
+    padding: 24px 26px 22px; border: 1px solid var(--line);
+    background: linear-gradient(160deg, rgba(14, 20, 36, 0.84), rgba(8, 11, 22, 0.8));
+    clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; right: 24px; height: 2px; background: linear-gradient(90deg, var(--blue), var(--violet), var(--red)); }
+  .card h4 { display: flex; justify-content: space-between; margin: 0 0 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); }
+  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .cstat b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .cstat span { font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+  .cstat.hero { grid-column: 1 / -1; padding-bottom: 14px; border-bottom: 1px solid var(--faint); }
+  .cstat.hero b { font-size: 46px; font-style: italic; line-height: 1.1; background: linear-gradient(90deg, #fff, #8db2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  @media (max-width: 980px) { .card { display: none; } }
+
+  /* ---- Launch sequence (after pressing Play) ---- */
+  .launch { position: absolute; inset: 0; z-index: 6; display: none; flex-direction: column; align-items: center; justify-content: center; background: #02040a; }
+  #ui.launching .launch { display: flex; animation: fadein 0.35s ease both; }
+  @keyframes fadein { from { opacity: 0; } }
+  .launch .lt { padding-left: 0.6em; font-size: 12px; letter-spacing: 0.6em; text-transform: uppercase; color: var(--dim); }
+  .launch .lw { margin-top: 12px; padding-left: 0.18em; font-size: clamp(28px, 4vw, 54px); font-weight: 900; font-style: italic; letter-spacing: 0.18em; text-transform: uppercase; }
+  .lbar { width: min(420px, 70vw); height: 3px; margin-top: 30px; overflow: hidden; background: rgba(255, 255, 255, 0.1); }
+  .lbar i { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--blue), var(--red)); animation: load 1s cubic-bezier(0.3, 0.6, 0.2, 1) forwards; }
+  @keyframes load { to { transform: scaleX(1); } }
+
+  /* ---- Light sweep between screens ---- */
+  .sweep {
+    position: absolute; top: -10%; bottom: -10%; left: 0; width: 38vw; z-index: 5; pointer-events: none; opacity: 0;
+    background: linear-gradient(90deg, rgba(120, 170, 255, 0), rgba(190, 215, 255, 0.26), rgba(120, 170, 255, 0));
+    transform: translateX(-60vw) skewX(-20deg);
+  }
+  #ui.sweeping .sweep { animation: sweepAcross 0.65s cubic-bezier(0.4, 0, 0.2, 1) both; }
+  @keyframes sweepAcross {
+    0% { opacity: 0; transform: translateX(-60vw) skewX(-20deg); }
+    12%, 88% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(130vw) skewX(-20deg); }
+  }
+
+  /* ================= PANELS (How to play, Settings, Pause) ================= */
+  .panel {
+    position: relative; width: min(900px, 94vw); max-height: calc(100vh - 2 * var(--bar) - 30px); overflow: auto;
+    padding: 34px 42px 36px; border: 1px solid var(--line);
+    background: linear-gradient(160deg, rgba(14, 20, 36, 0.88), rgba(7, 10, 20, 0.92));
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+    animation: pop 0.55s var(--ease) both;
+  }
+  .panel::before, .panel::after { content: ""; position: absolute; width: 28px; height: 28px; pointer-events: none; }
+  .panel::before { top: 0; left: 0; border-top: 2px solid var(--blue); border-left: 2px solid var(--blue); }
+  .panel::after { bottom: 0; right: 0; border-bottom: 2px solid var(--red); border-right: 2px solid var(--red); }
+  .panel.narrow { width: min(600px, 94vw); }
+  .panel.center { width: min(480px, 94vw); text-align: center; }
+  .panel::-webkit-scrollbar { width: 8px; }
+  .panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 8px; }
+  .ph { display: flex; align-items: center; gap: 16px; }
+  .pno { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.2em; color: var(--blue); }
+  .ph h2 { margin: 0; font-size: 30px; font-weight: 900; font-style: italic; letter-spacing: 0.14em; text-transform: uppercase; }
+  .pline { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(110, 168, 255, 0.7), rgba(255, 255, 255, 0)); }
+  .panel.center .ph { justify-content: center; }
+  .panel.center .pline { display: none; }
+  .panel h3 { margin: 28px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--blue); }
+  .lead { margin: 14px 0 0; font-size: 15.5px; line-height: 1.6; color: #b9c4de; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 44px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } .panel { padding: 26px 22px; } }
+
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list li { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--faint); font-size: 14.5px; line-height: 1.4; color: #cfd8ee; }
+  .list li:last-child { border-bottom: 0; }
+  .list b { color: #fff; }
+  .keys { display: inline-flex; gap: 6px; min-width: 160px; flex: none; }
+  .icon { display: flex; justify-content: center; width: 34px; flex: none; }
+  kbd {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 9px;
+    font: 700 14px/1 ui-monospace, "SF Mono", Menlo, monospace; color: #fff;
+    background: linear-gradient(#2c3552, #1d2339); border: 1px solid rgba(255, 255, 255, 0.18); border-bottom-width: 3px; border-radius: 6px;
+  }
+  kbd.wide { min-width: 66px; }
+  .dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c); }
+  .gem { display: block; width: 13px; height: 20px; background: #7dffea; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+  /* ---- Buttons used inside panels ---- */
+  .btn {
+    position: relative; appearance: none; -webkit-appearance: none; cursor: pointer; width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 26px;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); color: var(--text);
+    font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+    transition: transform 0.2s var(--ease), background 0.2s, border-color 0.2s;
+  }
+  .btn .arrow { font-size: 22px; line-height: 1; opacity: 0.55; transition: transform 0.2s, opacity 0.2s; }
+  .btn:hover, .btn:focus-visible { outline: none; transform: translateX(6px); background: rgba(110, 168, 255, 0.2); border-color: rgba(110, 168, 255, 0.8); }
+  .btn:hover .arrow, .btn:focus-visible .arrow { opacity: 1; transform: translateX(3px); }
+  .btn.primary { border-color: transparent; background: linear-gradient(135deg, #3d8bff, #7a5cff); }
+  .btn.primary:hover, .btn.primary:focus-visible { background: linear-gradient(135deg, #5a9dff, #8f73ff); }
+  .btn.small { width: auto; display: inline-flex; padding: 13px 30px 13px 22px; margin-top: 28px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+  /* ---- Settings rows ---- */
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 8px; border-bottom: 1px solid var(--faint); transition: background 0.2s; }
+  .row:focus-within { background: linear-gradient(90deg, rgba(77, 163, 255, 0.1), rgba(77, 163, 255, 0)); }
+  .row:last-of-type { border-bottom: 0; }
+  .label { font-size: 16px; font-weight: 600; }
+  .hint { margin-top: 4px; font-size: 13px; color: var(--dim); }
+  .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); }
+  .seg button { appearance: none; border: 0; background: transparent; cursor: pointer; color: var(--dim); padding: 9px 16px; border-radius: 5px; font-size: 14px; font-weight: 700; transition: background 0.2s, color 0.2s; }
+  .seg button:hover { color: #fff; }
+  .seg button[aria-pressed="true"] { color: #fff; background: linear-gradient(135deg, #3d8bff, #7a5cff); box-shadow: 0 4px 14px rgba(77, 120, 255, 0.4); }
+  .seg button:focus-visible, .switch:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+  .switch { appearance: none; position: relative; width: 52px; height: 28px; padding: 0; cursor: pointer; flex: none; border-radius: 4px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.1); transform: skewX(-12deg); transition: background 0.2s; }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 2px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); transition: transform 0.2s var(--ease); }
+  .switch[aria-checked="true"] { border-color: transparent; background: linear-gradient(135deg, #3d8bff, #7a5cff); }
+  .switch[aria-checked="true"] i { transform: translateX(24px); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 26px; }
+  .stats div { padding: 14px 8px; text-align: center; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
+  .stats b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+
+<div id="ui" data-screen="splash">
+
+  <!-- ===== atmosphere layers ===== -->
+  <div class="backdrop"></div>
+  <div class="grade"></div>
+  <canvas id="fx"></canvas>
+  <div class="scan"></div>
+  <div class="grain"></div>
+
+  <!-- ===== letterbox bars ===== -->
+  <header class="bar top">
+    <span class="brand"><i></i>Gridlock</span>
+    <span class="live"><i></i>World <b id="worldId">0000</b></span>
+  </header>
+  <footer class="bar bottom">
+    <div class="hints">
+      <span><kbd>&uarr;</kbd><kbd>&darr;</kbd>Navigate</span>
+      <span><kbd>&crarr;</kbd>Select</span>
+      <span><kbd>Esc</kbd>Back</span>
+    </div>
+    <div class="tip" id="tip"></div>
+    <span class="ver">v1.1</span>
+  </footer>
+
+  <!-- ============ PRESS ANY KEY ============ -->
+  <section class="screen active" id="screen-splash" data-action="enter">
+    <div class="rise" style="--i:0">
+      <h1 class="wordmark">GRID<svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="36" fill="none" stroke="#e4edff" stroke-width="15"/><circle cx="50" cy="14" r="10" fill="#ff5c5c"/><circle cx="24.5" cy="24.5" r="10" fill="#4da3ff"/></svg>LOCK</h1>
+    </div>
+    <div class="tagline rise" style="--i:1">Outrun the machine</div>
+    <div class="press rise" style="--i:3">Press any key</div>
+  </section>
+
+  <!-- ============ MAIN MENU ============ -->
+  <section class="screen" id="screen-main">
+    <div class="left">
+      <div class="rise" style="--i:0">
+        <h1 class="wordmark">GRID<svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="36" fill="none" stroke="#e4edff" stroke-width="15"/><circle cx="50" cy="14" r="10" fill="#ff5c5c"/><circle cx="24.5" cy="24.5" r="10" fill="#4da3ff"/></svg>LOCK</h1>
+      </div>
+      <div class="tagline rise" style="--i:1">Outrun the machine</div>
+      <nav class="mlist">
+        <button class="mitem primary rise" style="--i:2" data-action="play" data-focus>
+          <span class="idx">01</span>
+          <span><span class="mlabel">Play</span><span class="msub">Enter the grid and start a run</span></span>
+          <span class="chev">&rsaquo;</span>
+        </button>
+        <button class="mitem rise" style="--i:3" data-action="howto">
+          <span class="idx">02</span>
+          <span><span class="mlabel">How to play</span><span class="msub">Controls, tools and the world</span></span>
+          <span class="chev">&rsaquo;</span>
+        </button>
+        <button class="mitem rise" style="--i:4" data-action="settings">
+          <span class="idx">03</span>
+          <span><span class="mlabel">Settings</span><span class="msub">Difficulty, sound and display</span></span>
+          <span class="chev">&rsaquo;</span>
+        </button>
+      </nav>
+    </div>
+    <aside class="card rise" style="--i:5">
+      <h4><span>Pilot record</span><span>&#9679;</span></h4>
+      <div class="cgrid">
+        <div class="cstat hero"><b id="c-best">0.0s</b><span>Best survival</span></div>
+        <div class="cstat"><b id="c-runs">0</b><span>Runs</span></div>
+        <div class="cstat"><b id="c-crystals">0</b><span>Crystals</span></div>
+        <div class="cstat"><b id="c-time">0s</b><span>Time survived</span></div>
+        <div class="cstat"><b id="c-diff">Normal</b><span>Difficulty</span></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ============ HOW TO PLAY ============ -->
+  <section class="screen" id="screen-howto">
+    <div class="panel">
+      <div class="ph"><span class="pno">02</span><h2>How to play</h2><span class="pline"></span></div>
+      <p class="lead">Survive as long as you can. The red CPU never stops hunting you, and it gets faster every second. Use your tools, explore the world, and never stop moving.</p>
+      <div class="cols">
+        <div>
+          <h3>Controls</h3>
+          <ul class="list">
+            <li><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move</span></li>
+            <li><span class="keys"><kbd class="wide">Space</kbd></span><span><b>Mine.</b> Slows the CPU when it steps on it</span></li>
+            <li><span class="keys"><kbd>E</kbd></span><span><b>Slow pulse.</b> Slows the CPU if it's close</span></li>
+            <li><span class="keys"><kbd>F</kbd></span><span><b>Dash.</b> Leap 5 squares forward</span></li>
+            <li><span class="keys"><kbd>Q</kbd></span><span><b>Decoy.</b> A fake you the CPU chases</span></li>
+            <li><span class="keys"><kbd class="wide">Esc</kbd></span><span>Pause</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>The world</h3>
+          <ul class="list">
+            <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in glowing pairs. The CPU uses them too</span></li>
+            <li><span class="icon"><i class="gem"></i></span><span><b>Crystals</b> refill your tools and slow the CPU</span></li>
+            <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you back to the start. The CPU avoids it</span></li>
+            <li><span class="icon"><i class="dot" style="--c:#6a7d3f"></i></span><span><b>Mud</b> slows everyone down</span></li>
+            <li><span class="icon"><i class="dot" style="--c:#dfe9ef"></i></span><span><b>Ice</b> speeds everyone up</span></li>
+            <li><span class="icon"><i class="dot" style="--c:#8272e0"></i></span><span><b>Crystal Caves</b> hold the most crystals</span></li>
+          </ul>
+        </div>
+      </div>
+      <button class="btn small" data-action="back-main" data-focus><span class="arrow">&lsaquo;</span><span>Back</span></button>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="screen-settings">
+    <div class="panel narrow">
+      <div class="ph"><span class="pno">03</span><h2>Settings</h2><span class="pline"></span></div>
+      <div class="row" style="margin-top: 14px;">
+        <div><div class="label">Difficulty</div><div class="hint">How quickly the CPU ramps up</div></div>
+        <div class="seg" role="group" aria-label="Difficulty">
+          <button data-action="difficulty" data-value="Easy">Easy</button>
+          <button data-action="difficulty" data-value="Normal">Normal</button>
+          <button data-action="difficulty" data-value="Hard">Hard</button>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="label">Sound</div><div class="hint">Menu and game sound effects</div></div>
+        <button class="switch" id="sw-sound" role="switch" aria-label="Sound" data-action="toggle-sound"><i></i></button>
+      </div>
+      <div class="row">
+        <div><div class="label">Minimap</div><div class="hint">Show the map in the corner</div></div>
+        <button class="switch" id="sw-minimap" role="switch" aria-label="Minimap" data-action="toggle-minimap"><i></i></button>
+      </div>
+      <div class="row">
+        <div><div class="label">Visual effects</div><div class="hint">Film grain, particles and glow in the menus</div></div>
+        <button class="switch" id="sw-fx" role="switch" aria-label="Visual effects" data-action="toggle-fx"><i></i></button>
+      </div>
+      <button class="btn small" data-action="settings-back" data-focus><span class="arrow">&lsaquo;</span><span>Back</span></button>
+    </div>
+  </section>
+
+  <!-- ============ PAUSE ============ -->
+  <section class="screen" id="screen-pause">
+    <div class="panel center">
+      <div class="ph"><h2>Paused</h2></div>
+      <div class="stats">
+        <div><b id="st-time">0.0s</b><span>Survived</span></div>
+        <div><b id="st-best">0.0s</b><span>Best</span></div>
+        <div><b id="st-crystals">0</b><span>Crystals</span></div>
+      </div>
+      <nav class="menu">
+        <button class="btn primary" data-action="resume" data-focus><span>Resume</span><span class="arrow">&rsaquo;</span></button>
+        <button class="btn" data-action="restart"><span>Restart</span><span class="arrow">&rsaquo;</span></button>
+        <button class="btn" data-action="pause-settings"><span>Settings</span><span class="arrow">&rsaquo;</span></button>
+        <button class="btn" data-action="quit"><span>Quit to menu</span><span class="arrow">&rsaquo;</span></button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===== transitions ===== -->
+  <div class="sweep"></div>
+  <div class="launch">
+    <div class="lt">Entering</div>
+    <div class="lw">The Grid</div>
+    <div class="lbar"><i></i></div>
+  </div>
+
+</div>
+
 <script>
 // ---- SETTINGS (change these numbers to play with it) ----
 const GRID_SIZE = 200;   // the grid is 200 x 200 squares
 const CELL = 40;         // each square is 40 pixels wide
+
+// What the game is doing right now: "menu", "playing" or "paused"
+let gameState = "menu";
+const menuParallax = { x: 0, y: 0 };   // mouse position (-1 to 1) for a subtle depth effect in menus
 
 // ---- THE TWO PLAYERS ----
 // x = column, y = row. Player 1 starts on the left, player 2 on the right.
@@ -48,14 +502,13 @@ const BIOMES = [
   { name: "Tundra",        floor: ["#dfe9ef", "#d6e2ea", "#e6eef3", "#d0dde6"], wall: "#7f98a8", top: "#a9c0cf", speed: 0.65, note: "ice: everyone moves faster" },
   { name: "Swamp",         floor: ["#3b4a2c", "#38472a", "#3f4e2f", "#354427"], wall: "#1f2916", top: "#34471f", speed: 1.8,  note: "mud: everyone moves slower" },
   { name: "Volcano",       floor: ["#3a2a2a", "#352626", "#3f2e2e", "#312323"], wall: "#1a1111", top: "#7a2f1a", speed: 1,    note: "lava pools: deadly to you", lava: true },
-  { name: "Crystal Caves", floor: ["#2c2a52", "#2a2850", "#302e58", "#282649"], wall: "#4a3f8f", top: "#8272e0", speed: 1,    note: "extra crystals here", crystalBias: true }
+  { name: "Crystal Caves", floor: ["#2c2a52", "#2a2850", "#302e58", "#282649"], wall: "#4a3f8f", top: "#8272e0", speed: 1,    note: "" }
 ];
 const PORTAL_COLORS = ["#ff4da6", "#4dffd2", "#ffd24d", "#4da6ff", "#b84dff", "#ff8a4d", "#9dff4d", "#ffffff"];
 const NUM_ROCK_CLUMPS = 380;   // more = a more crowded map
 const NUM_RUINS = 24;          // walled rooms with doorways
-const NUM_CRYSTALS = 45;
+const NUM_BIG_CRYSTALS = 4;   // the big crystals. Collect ALL of them to win the round
 const NUM_LAVA_POOLS = 45;     // lava pools placed in the Volcano zone
-const CRYSTAL_RESPAWN = 15000; // a collected crystal comes back somewhere else after this (ms)
 
 // One entry per square on the map:
 const biome = new Uint8Array(N * N);               // which zone it belongs to
@@ -195,9 +648,6 @@ for (let i = 0; i < N * N; i++) {
   if (tile[i] === 0) openCells.push(i);
 }
 
-// Squares in zones that attract crystals (the Crystal Caves)
-const caveCells = openCells.filter(i => BIOMES[biome[i]].crystalBias);
-
 // Step 4: portals come in pairs. Step on one, pop out of the other.
 const portalCells = [];
 function farFromStarts(idx) {
@@ -221,40 +671,68 @@ for (let i = 0; i < PORTAL_COLORS.length; i++) {
   portalCells.push(a, b);
 }
 
-// Step 5: crystals. Walk onto one to collect it.
-const crystals = [];          // list of {x, y}
-let crystalsCollected = 0;
+// Step 5: the BIG crystals. There are only four, one in each quarter of the map,
+// far from where you start. Collect all four to win.
+const crystalSpots = [];      // where each crystal lives (the same every round)
+const crystals = [];          // the crystals still waiting to be collected this round
+let crystalsCollected = 0;    // how many you've collected this round
 
-function spawnCrystal() {
-  for (let tries = 0; tries < 100; tries++) {
-    // half the time, pick a square in the Crystal Caves
-    const pool = (caveCells.length > 0 && Math.random() < 0.5) ? caveCells : openCells;
-    const idx = pool[rand(pool.length)];
+function pickCrystalSpot(quarter) {
+  const qx = (quarter % 2) * (N / 2);
+  const qy = Math.floor(quarter / 2) * (N / 2);
+  const inQuarter = (x, y) => x >= qx && x < qx + N / 2 && y >= qy && y < qy + N / 2;
+  const farFromStarts = (x, y) =>
+    Math.hypot(x - START1.x, y - START1.y) > 25 && Math.hypot(x - START2.x, y - START2.y) > 25;
+
+  // Prefer the hidden spot inside a ruin, if this quarter has a good one
+  const ruins = ruinSpots.filter(r =>
+    inQuarter(r.x, r.y) && farFromStarts(r.x, r.y) && tile[r.y * N + r.x] === 0 && portalTo[r.y * N + r.x] < 0);
+  if (ruins.length > 0) return ruins[rand(ruins.length)];
+
+  for (let tries = 0; tries < 1000; tries++) {
+    const idx = openCells[rand(openCells.length)];
     const x = idx % N, y = (idx / N) | 0;
-    if (portalTo[idx] >= 0) continue;
-    if (crystals.some(c => c.x === x && c.y === y)) continue;
-    crystals.push({ x: x, y: y });
-    return;
+    if (inQuarter(x, y) && farFromStarts(x, y) && portalTo[idx] < 0) return { x: x, y: y };
   }
+  const idx = openCells[rand(openCells.length)];   // (very unlikely) fall back to anywhere
+  return { x: idx % N, y: (idx / N) | 0 };
 }
-for (const r of ruinSpots) {   // one crystal hidden inside each ruin (if it's still reachable)
-  if (tile[r.y * N + r.x] === 0 && portalTo[r.y * N + r.x] < 0) crystals.push({ x: r.x, y: r.y });
-}
-while (crystals.length < NUM_CRYSTALS) spawnCrystal();
+for (let q = 0; q < NUM_BIG_CRYSTALS; q++) crystalSpots.push(pickCrystalSpot(q));
 
-// Picking one up refills all your abilities and slows the CPU for 8 seconds
+// Puts all the crystals back (used at the start of every round)
+function resetCrystals() {
+  crystals.length = 0;
+  for (const spot of crystalSpots) crystals.push({ x: spot.x, y: spot.y });
+  crystalsCollected = 0;
+}
+resetCrystals();
+
+// Each crystal is a big power surge: every ability refills, and the CPU is
+// frozen and then slowed for a long time. Get all four and you win.
 function collectCrystals() {
   for (let i = 0; i < crystals.length; i++) {
     if (crystals[i].x === p1.x && crystals[i].y === p1.y) {
       crystals.splice(i, 1);
       crystalsCollected++;
+      stats.crystals++;
+      saveSettings();
       mineCount = MAX_MINES;
       pulseReadyAt = 0;
       dashReadyAt = 0;
       decoyReadyAt = 0;
-      slowedUntil = Math.max(slowedUntil, Date.now() + 8000);
-      showBanner("Crystal! Abilities refilled, CPU slowed");
-      setTimeout(spawnCrystal, CRYSTAL_RESPAWN);
+      phaseReadyAt = 0;
+      stopReadyAt = 0;
+      boostReadyAt = 0;
+      freezeCpu(4000);
+      slowCpu(12000);
+      if (crystalsCollected >= NUM_BIG_CRYSTALS) {
+        winGame();
+        return;
+      }
+      showBanner("CRYSTAL " + crystalsCollected + " OF " + NUM_BIG_CRYSTALS + "   Power surge!", 3500);
+      beep(660, 0.12, "sine", 0.06);
+      setTimeout(() => beep(880, 0.12, "sine", 0.06), 100);
+      setTimeout(() => beep(1320, 0.3, "sine", 0.06), 200);
       return;
     }
   }
@@ -320,7 +798,7 @@ const MAX_MINES = 5;
 let mineCount = MAX_MINES;
 const mines = [];             // list of squares that have a mine on them
 setInterval(() => {           // you get one mine back every 2 seconds
-  if (mineCount < MAX_MINES) mineCount++;
+  if (mineCount < MAX_MINES && gameState === "playing") mineCount++;
 }, 2000);
 
 function dropMine() {
@@ -340,6 +818,7 @@ function firePulse() {
   if (now < pulseReadyAt) return;          // still recharging
   pulseReadyAt = now + PULSE_COOLDOWN;
   pulseFlashUntil = now + 300;
+  beep(420, 0.25, "sine", 0.05);
   const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   if (distance <= PULSE_RANGE) slowedUntil = now + SLOW_TIME;
 }
@@ -410,6 +889,10 @@ function move(player, dx, dy) {
     player.y = (exit / N) | 0;
     player.drawX = player.x;
     player.drawY = player.y;
+    if (player === p1) {   // a little rising "whoosh" when YOU use a portal
+      beep(240, 0.18, "triangle", 0.05);
+      setTimeout(() => beep(480, 0.2, "triangle", 0.05), 80);
+    }
   }
 
   if (player === p1) collectCrystals();   // grab a crystal if we're standing on one
@@ -430,7 +913,7 @@ let heldKeys = [];         // movement keys held right now, oldest first
 let lastMoveAt = 0;
 
 function tryMove() {
-  if (heldKeys.length === 0) return;
+  if (heldKeys.length === 0 || gameState !== "playing") return;
   const now = Date.now();
   if (now - lastMoveAt < MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed) return;   // mud makes this longer, ice shorter   // too soon for another step
   lastMoveAt = now;
@@ -441,6 +924,9 @@ setInterval(tryMove, 10);   // check for a step every 10 milliseconds
 
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
+
+  if (key === "escape") { handleEscape(); return; }   // Esc: pause, resume, or go back
+  if (gameState !== "playing") return;                // menus handle their own keys
 
   // Movement keys: add to the held list (and step right away on a fresh press)
   if (moveKeys.hasOwnProperty(key) && !heldKeys.includes(key)) {
@@ -470,11 +956,22 @@ window.addEventListener("blur", () => { heldKeys = []; });
 // ---- DIFFICULTY ----
 // The longer you survive, the faster and sneakier the CPU gets.
 const START_DELAY = 250;   // CPU time between steps at the start of a round (ms)
-const MIN_DELAY = 55;      // the CPU never gets faster than this
-const SPEED_UP = 14;       // every second you survive, the delay shrinks by this many ms
-const MAX_LEAD = 6;        // the most squares ahead of you the CPU will aim
+let MIN_DELAY = 55;        // the CPU never gets faster than this (set by the difficulty setting)
+let SPEED_UP = 14;         // every second you survive, the delay shrinks by this many ms
+let MAX_LEAD = 6;          // the most squares ahead of you the CPU will aim
 let roundStart = Date.now();   // when this round began
 let bestTime = 0;              // your longest survival so far, in seconds
+let roundActive = false;       // is a round in progress? (false while you're in the menu)
+
+// Saves your time if it beats your best
+function recordBest() {
+  if (!roundActive) return;
+  const t = secondsSurvived();
+  stats.rounds++;        // lifetime totals shown on the title screen
+  stats.seconds += t;
+  if (t > bestTime) bestTime = t;
+  saveSettings();
+}
 
 function secondsSurvived() {
   return (Date.now() - roundStart) / 1000;
@@ -503,10 +1000,14 @@ function showBanner(text, ms) {
 
 // Starts a fresh round. "reason" is the message shown on screen.
 function newRound(reason) {
-  const lasted = secondsSurvived();
-  bestTime = Math.max(bestTime, lasted);
-  showBanner(reason + "  You survived " + lasted.toFixed(1) + "s");
+  recordBest();
+  if (reason) {   // no message when a round starts from the menu
+    showBanner(reason + "  You survived " + secondsSurvived().toFixed(1) + "s");
+    beep(160, 0.35, "sawtooth", 0.05);   // a low "oops" sound
+  }
+  roundActive = true;
   roundStart = Date.now();
+  resetCrystals();   // all four crystals come back each round
   slowedUntil = 0;
   mines.length = 0;
   mineCount = MAX_MINES;
@@ -522,8 +1023,6 @@ function newRound(reason) {
     p.drawY = p.y;
   }
 }
-
-showBanner("Collect crystals, use portals, avoid lava!", 6000);
 
 function cpuStep() {
   // The CPU doesn't only chase where you ARE. As time goes on it also aims
@@ -577,7 +1076,7 @@ function cpuStep() {
 
 // Take a step, then wait. The wait is longer while the CPU is slowed.
 function cpuLoop() {
-  cpuStep();
+  if (gameState === "playing") cpuStep();   // the CPU only moves during a game
   setTimeout(cpuLoop, currentCpuDelay());
 }
 cpuLoop();
@@ -594,6 +1093,7 @@ function drawDot(cx, cy, color, radius) {
 }
 
 function draw() {
+  if (gameState === "paused") shiftTimers();   // keeps every timer (and the HUD) frozen while paused
   // Each frame, slide the shown position 20% of the way to the real one.
   // Bigger number = snappier, smaller number = floatier.
   const SMOOTHING = 0.2;
@@ -607,8 +1107,16 @@ function draw() {
 
   // The "camera" follows player 1: we figure out where the screen's
   // top-left corner sits inside the big grid.
-  const camX = p1.drawX * CELL + CELL / 2 - canvas.width / 2;
-  const camY = p1.drawY * CELL + CELL / 2 - canvas.height / 2;
+  // In the menu, the camera drifts slowly over the world as a live backdrop
+  let focusX = p1.drawX;
+  let focusY = p1.drawY;
+  if (gameState === "menu") {
+    const drift = Date.now() / 1000;
+    focusX = N / 2 + Math.sin(drift * 0.03) * 70 + Math.sin(drift * 0.071) * 20 + menuParallax.x * 2.5;
+    focusY = N / 2 + Math.cos(drift * 0.025) * 70 + Math.cos(drift * 0.067) * 20 + menuParallax.y * 1.8;
+  }
+  const camX = focusX * CELL + CELL / 2 - canvas.width / 2;
+  const camY = focusY * CELL + CELL / 2 - canvas.height / 2;
 
   // Only draw the grid lines that are actually visible on screen
   const firstCol = Math.max(0, Math.floor(camX / CELL));
@@ -702,21 +1210,41 @@ function draw() {
     ctx.fill();
   }
 
-  // Draw the crystals: little cyan gems that bob up and down
+  // Draw the BIG crystals: a large diamond on a pulsing 3x3 pad
   for (const c of crystals) {
     const gx = c.x * CELL + CELL / 2 - camX;
-    const gy = c.y * CELL + CELL / 2 - camY + Math.sin(clock * 3 + c.x) * 3;
-    if (gx < -CELL || gy < -CELL || gx > canvas.width + CELL || gy > canvas.height + CELL) continue;
+    const gy = c.y * CELL + CELL / 2 - camY;
+    if (gx < -CELL * 2 || gy < -CELL * 2 || gx > canvas.width + CELL * 2 || gy > canvas.height + CELL * 2) continue;
+    const pulse = 0.5 + 0.5 * Math.sin(clock * 3);
+    ctx.fillStyle = "rgba(125, 255, 234, " + (0.1 + 0.14 * pulse) + ")";
+    ctx.fillRect(gx - CELL * 1.5, gy - CELL * 1.5, CELL * 3, CELL * 3);
+    ctx.strokeStyle = "rgba(125, 255, 234, " + (0.45 + 0.4 * pulse) + ")";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gx - CELL * 1.5, gy - CELL * 1.5, CELL * 3, CELL * 3);
+    const bob = Math.sin(clock * 2.5) * 4;
     ctx.fillStyle = "#7dffea";
     ctx.beginPath();
-    ctx.moveTo(gx, gy - 13);
-    ctx.lineTo(gx + 8, gy);
-    ctx.lineTo(gx, gy + 13);
-    ctx.lineTo(gx - 8, gy);
+    ctx.moveTo(gx, gy - 34 + bob);
+    ctx.lineTo(gx + 21, gy + bob);
+    ctx.lineTo(gx, gy + 34 + bob);
+    ctx.lineTo(gx - 21, gy + bob);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";   // a lighter left facet
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - 34 + bob);
+    ctx.lineTo(gx - 21, gy + bob);
+    ctx.lineTo(gx, gy + bob);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - 34 + bob);
+    ctx.lineTo(gx + 21, gy + bob);
+    ctx.lineTo(gx, gy + 34 + bob);
+    ctx.lineTo(gx - 21, gy + bob);
+    ctx.closePath();
     ctx.stroke();
   }
 
@@ -792,9 +1320,15 @@ function draw() {
     ctx.stroke();
   }
 
-  // Draw both dots
-  for (const p of [p1, p2]) {
+  // Draw both dots (hidden while the menu backdrop is showing)
+  for (const p of (gameState === "menu" ? [] : [p1, p2])) {
     drawDot(p.drawX * CELL + CELL / 2 - camX, p.drawY * CELL + CELL / 2 - camY, (p === p2 && now < slowedUntil) ? "#9b7bff" : p.color, CELL * 0.35);
+  }
+
+  // In the menu there's no HUD, just the backdrop
+  if (gameState === "menu") {
+    requestAnimationFrame(draw);
+    return;
   }
 
   // A dark panel behind the text so it's readable on any terrain
@@ -838,14 +1372,14 @@ function draw() {
 
   // Controls reminder along the bottom
   ctx.font = "14px monospace";
-  const help = "WASD move   Space mine   E pulse   F dash   Q decoy";
+  const help = "WASD move   Space mine   E pulse   F dash   Q decoy   Esc pause";
   const hw = ctx.measureText(help).width;
   ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
   ctx.fillRect(canvas.width / 2 - hw / 2 - 12, canvas.height - 40, hw + 24, 28);
   ctx.fillStyle = "#ddd";
   ctx.fillText(help, canvas.width / 2 - hw / 2, canvas.height - 21);
 
-  drawMinimap();
+  if (settings.minimap) drawMinimap();
   requestAnimationFrame(draw);
 }
 
@@ -858,7 +1392,10 @@ function drawMinimap() {
   ctx.drawImage(mapImg, left, top, size, size);      // the picture of the whole world
   ctx.fillStyle = "#7dffea";                         // crystals show as cyan dots
   for (const c of crystals) {
-    ctx.fillRect(left + (c.x / N) * size - 1, top + (c.y / N) * size - 1, 3, 3);
+    ctx.fillRect(left + (c.x / N) * size - 4, top + (c.y / N) * size - 4, 9, 9);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(left + (c.x / N) * size - 4, top + (c.y / N) * size - 4, 9, 9);
   }
   ctx.strokeStyle = "#888";
   ctx.lineWidth = 1;
@@ -868,6 +1405,417 @@ function drawMinimap() {
   }
 }
 
+// ================= SETTINGS AND RECORDS (saved on this computer) =================
+const settings = { difficulty: "Normal", sound: true, minimap: true, fx: true };
+const stats = { rounds: 0, crystals: 0, seconds: 0 };   // lifetime totals
+
+// How hard each difficulty is: how fast the CPU ramps up, its top speed,
+// and how far ahead of you it aims.
+const DIFFICULTIES = {
+  Easy:   { speedUp: 8,  minDelay: 90, lead: 4 },
+  Normal: { speedUp: 14, minDelay: 55, lead: 6 },
+  Hard:   { speedUp: 20, minDelay: 42, lead: 7 }
+};
+
+function applyDifficulty() {
+  const d = DIFFICULTIES[settings.difficulty];
+  SPEED_UP = d.speedUp;
+  MIN_DELAY = d.minDelay;
+  MAX_LEAD = d.lead;
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem("gridlock-save", JSON.stringify({ settings: settings, bestTime: bestTime, stats: stats }));
+  } catch (e) { /* saving isn't possible here, that's fine */ }
+}
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("gridlock-save"));
+    if (saved) {
+      Object.assign(settings, saved.settings);
+      Object.assign(stats, saved.stats);
+      bestTime = saved.bestTime || 0;
+    }
+  } catch (e) { /* nothing saved yet */ }
+  if (!DIFFICULTIES[settings.difficulty]) settings.difficulty = "Normal";
+  applyDifficulty();
+}
+
+// ================= SOUND =================
+// Tiny synthesized sounds. No sound files needed.
+let audioCtx = null;
+function getAudio() {
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, duration, type, volume) {
+  if (!settings.sound) return;
+  try {
+    const ac = getAudio();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.value = volume || 0.04;
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + duration);
+    osc.stop(ac.currentTime + duration);
+  } catch (e) { /* no audio available, that's fine */ }
+}
+// A rising "whoosh" used by the screen transitions
+function swoosh() {
+  if (!settings.sound) return;
+  try {
+    const ac = getAudio();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(140, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(900, ac.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.02, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime + 0.45);
+  } catch (e) { /* no audio available, that's fine */ }
+}
+
+// ================= MENUS =================
+const ui = document.getElementById("ui");
+const screens = {
+  splash: document.getElementById("screen-splash"),
+  main: document.getElementById("screen-main"),
+  howto: document.getElementById("screen-howto"),
+  settings: document.getElementById("screen-settings"),
+  pause: document.getElementById("screen-pause")
+};
+let currentScreen = "splash";
+let settingsReturn = "main";   // where the Settings "Back" button goes
+let hideTimer = null;
+let pausedAt = 0;
+let launching = false;
+let enteredAt = 0;             // when the intro screen was dismissed
+
+function fmt(seconds) {
+  return seconds.toFixed(1) + "s";
+}
+function fmtDuration(seconds) {
+  const m = Math.floor(seconds / 60);
+  return m > 0 ? m + "m " + Math.floor(seconds % 60) + "s" : Math.floor(seconds) + "s";
+}
+function setText(id, text) {
+  document.getElementById(id).textContent = text;
+}
+
+// Refresh every number and switch shown in the menus
+function updateMenuLabels() {
+  const now = roundActive ? secondsSurvived() : 0;
+  setText("c-best", fmt(bestTime));
+  setText("c-runs", stats.rounds);
+  setText("c-crystals", stats.crystals);
+  setText("c-time", fmtDuration(stats.seconds));
+  setText("c-diff", settings.difficulty);
+  setText("st-time", fmt(now));
+  setText("st-best", fmt(Math.max(bestTime, now)));
+  setText("st-crystals", crystalsCollected);
+  for (const b of ui.querySelectorAll('[data-action="difficulty"]')) {
+    b.setAttribute("aria-pressed", String(b.dataset.value === settings.difficulty));
+  }
+  document.getElementById("sw-sound").setAttribute("aria-checked", String(settings.sound));
+  document.getElementById("sw-minimap").setAttribute("aria-checked", String(settings.minimap));
+  document.getElementById("sw-fx").setAttribute("aria-checked", String(settings.fx));
+  ui.classList.toggle("fx-off", !settings.fx);
+}
+
+// A diagonal flash of light that sweeps across the screen
+function playSweep() {
+  ui.classList.remove("sweeping");
+  void ui.offsetWidth;   // restart the animation
+  ui.classList.add("sweeping");
+  swoosh();
+}
+
+function showScreen(name) {
+  clearTimeout(hideTimer);
+  const wasHidden = ui.classList.contains("hidden");
+  const changed = name !== currentScreen;
+  ui.classList.remove("hidden", "fade-out", "launching");
+  ui.classList.toggle("paused", name === "pause" || (name === "settings" && settingsReturn === "pause"));
+  ui.dataset.screen = name;
+  currentScreen = name;
+  for (const key in screens) screens[key].classList.toggle("active", key === name);
+  updateMenuLabels();
+  const target = screens[name].querySelector("[data-focus]") || screens[name].querySelector("button");
+  if (target) target.focus();   // so the keyboard works straight away
+  if (changed || wasHidden) playSweep();
+}
+
+function hideMenus() {
+  ui.classList.add("fade-out");
+  hideTimer = setTimeout(() => {
+    ui.classList.add("hidden");
+    ui.classList.remove("fade-out", "launching");
+  }, 300);
+  if (document.activeElement) document.activeElement.blur();
+}
+
+// ================= GAME FLOW =================
+function enterMenu() {   // leaves the "press any key" screen
+  if (currentScreen !== "splash") return;
+  enteredAt = Date.now();
+  showScreen("main");
+}
+
+// Pressing Play runs a short "entering the grid" sequence, then starts the game
+function launchGame() {
+  if (launching) return;
+  launching = true;
+  ui.classList.add("launching");
+  swoosh();
+  setTimeout(() => {
+    launching = false;
+    startGame();
+  }, 1150);
+}
+
+function startGame() {
+  roundActive = false;   // don't count menu time as survival time
+  newRound(null);
+  gameState = "playing";
+  hideMenus();
+  showBanner("Collect crystals, use portals, avoid lava!", 6000);
+  beep(440, 0.1, "sine", 0.05);
+  setTimeout(() => beep(660, 0.1, "sine", 0.05), 90);
+  setTimeout(() => beep(880, 0.22, "sine", 0.05), 180);
+}
+
+function pauseGame() {
+  if (gameState !== "playing") return;
+  gameState = "paused";
+  pausedAt = Date.now();
+  heldKeys = [];
+  settingsReturn = "pause";
+  showScreen("pause");
+}
+
+// Every timer in the game counts real clock time, so after a pause we push
+// them all forward by however long we were paused. Nothing "ran out" meanwhile.
+function shiftTimers() {
+  const gap = Date.now() - pausedAt;
+  roundStart += gap;
+  slowedUntil += gap;
+  pulseReadyAt += gap;
+  dashReadyAt += gap;
+  decoyReadyAt += gap;
+  pulseFlashUntil += gap;
+  bannerUntil += gap;
+  if (decoy) decoy.until += gap;
+  pausedAt = Date.now();
+}
+
+function resumeGame() {
+  if (gameState !== "paused") return;
+  shiftTimers();
+  gameState = "playing";
+  hideMenus();
+}
+
+function restartGame() {
+  if (gameState === "paused") shiftTimers();
+  newRound(null);
+  gameState = "playing";
+  hideMenus();
+  showBanner("New round. Good luck!", 2000);
+}
+
+function quitToMenu() {
+  if (gameState === "paused") shiftTimers();
+  recordBest();
+  roundActive = false;
+  gameState = "menu";
+  heldKeys = [];
+  settingsReturn = "main";
+  showScreen("main");
+}
+
+// Esc pauses, resumes, or goes back one screen
+function handleEscape() {
+  if (launching || currentScreen === "splash") return;
+  if (gameState === "playing") {
+    pauseGame();
+  } else if (gameState === "paused") {
+    if (currentScreen === "pause") resumeGame();
+    else showScreen("pause");
+  } else if (currentScreen !== "main") {
+    showScreen(currentScreen === "settings" ? settingsReturn : "main");
+  }
+}
+
+// ================= BUTTONS =================
+ui.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el || launching) return;
+  const action = el.dataset.action;
+  if (action !== "enter" && Date.now() - enteredAt < 350) return;   // ignore the click that dismissed the intro
+  if (action !== "enter") beep(700, 0.06, "square", 0.02);
+
+  if (action === "enter") enterMenu();
+  else if (action === "play") launchGame();
+  else if (action === "howto") showScreen("howto");
+  else if (action === "settings") { settingsReturn = "main"; showScreen("settings"); }
+  else if (action === "back-main") showScreen("main");
+  else if (action === "settings-back") showScreen(settingsReturn);
+  else if (action === "resume") resumeGame();
+  else if (action === "restart") restartGame();
+  else if (action === "pause-settings") { settingsReturn = "pause"; showScreen("settings"); }
+  else if (action === "quit") quitToMenu();
+  else if (action === "difficulty") { settings.difficulty = el.dataset.value; applyDifficulty(); saveSettings(); updateMenuLabels(); }
+  else if (action === "toggle-sound") { settings.sound = !settings.sound; saveSettings(); updateMenuLabels(); }
+  else if (action === "toggle-minimap") { settings.minimap = !settings.minimap; saveSettings(); updateMenuLabels(); }
+  else if (action === "toggle-fx") { settings.fx = !settings.fx; saveSettings(); updateMenuLabels(); }
+});
+
+// A soft tick when you move over a button
+let lastHover = null;
+ui.addEventListener("mouseover", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (el && el !== lastHover && el.dataset.action !== "enter") beep(520, 0.03, "sine", 0.015);
+  lastHover = el;
+});
+
+// Keyboard: any key leaves the intro; arrow keys move between buttons.
+// Enter or Space presses the highlighted one.
+window.addEventListener("keydown", (e) => {
+  if (gameState === "playing" || launching) return;
+  if (currentScreen === "splash") {
+    const ignored = ["Shift", "Meta", "Control", "Alt", "CapsLock", "Tab", "Escape"];
+    if (!ignored.includes(e.key)) {
+      e.preventDefault();
+      enterMenu();
+    }
+    return;
+  }
+  const active = ui.querySelector(".screen.active");
+  if (!active) return;
+  const items = Array.from(active.querySelectorAll("button"));
+  if (items.length === 0) return;
+  const i = items.indexOf(document.activeElement);
+  let next = null;
+  if (e.key === "ArrowDown" || e.key === "ArrowRight") next = items[(i + 1) % items.length];
+  if (e.key === "ArrowUp" || e.key === "ArrowLeft") next = items[(i - 1 + items.length) % items.length];
+  if (next) {
+    next.focus();
+    e.preventDefault();
+    beep(520, 0.03, "sine", 0.015);
+  }
+});
+
+// Switching to another window or tab pauses the game automatically
+window.addEventListener("blur", () => { if (gameState === "playing") pauseGame(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && gameState === "playing") pauseGame(); });
+
+// ================= ATMOSPHERE: PARTICLES AND MOUSE PARALLAX =================
+const fx = document.getElementById("fx");
+const fctx = fx.getContext("2d");
+function sizeFx() {
+  fx.width = window.innerWidth;
+  fx.height = window.innerHeight;
+}
+sizeFx();
+window.addEventListener("resize", sizeFx);
+
+// A soft glowing dot, drawn once per colour and reused (built from stacked circles)
+function makeGlow(color) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  g.fillStyle = color;
+  for (let i = 0; i < 16; i++) {
+    g.globalAlpha = 0.07;
+    g.beginPath();
+    g.arc(32, 32, 30 - i * 1.8, 0, Math.PI * 2);
+    g.fill();
+  }
+  return c;
+}
+const glows = [makeGlow("#7fb4ff"), makeGlow("#a58bff"), makeGlow("#ff7a7a")];
+const particles = [];
+for (let i = 0; i < 70; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    depth: 0.3 + Math.random() * 0.7,          // far (small, slow) to near (big, fast)
+    glow: glows[Math.floor(Math.random() * glows.length)],
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+// Mouse position, from -1 to 1. Menus drift a little opposite to it, for depth.
+const parallaxTarget = { x: 0, y: 0 };
+window.addEventListener("mousemove", (e) => {
+  parallaxTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
+  parallaxTarget.y = (e.clientY / window.innerHeight) * 2 - 1;
+});
+const leftBlock = document.querySelector("#screen-main .left");
+let lastFx = 0;
+
+function fxLoop(time) {
+  requestAnimationFrame(fxLoop);
+  if (ui.classList.contains("hidden") || !settings.fx) return;
+  const dt = Math.min(0.05, (time - lastFx) / 1000 || 0.016);
+  lastFx = time;
+
+  menuParallax.x += (parallaxTarget.x - menuParallax.x) * 0.05;
+  menuParallax.y += (parallaxTarget.y - menuParallax.y) * 0.05;
+  leftBlock.style.transform = "translate(" + (-menuParallax.x * 7).toFixed(1) + "px, " + (-menuParallax.y * 5).toFixed(1) + "px)";
+
+  const W = fx.width, H = fx.height;
+  fctx.clearRect(0, 0, W, H);
+  fctx.globalCompositeOperation = "lighter";
+  for (const p of particles) {
+    p.y -= (10 + 34 * p.depth) * dt;                         // drift upward
+    p.x += Math.sin(time / 1600 + p.phase) * 8 * dt;         // sway sideways
+    if (p.y < -40) { p.y = H + 40; p.x = Math.random() * W; }
+    const size = 12 + 40 * p.depth;
+    fctx.globalAlpha = (0.35 + 0.35 * Math.sin(time / 900 + p.phase)) * p.depth;
+    fctx.drawImage(p.glow, p.x - menuParallax.x * 22 * p.depth - size / 2, p.y - menuParallax.y * 14 * p.depth - size / 2, size, size);
+  }
+  fctx.globalAlpha = 1;
+  fctx.globalCompositeOperation = "source-over";
+}
+
+// ================= TIPS IN THE BOTTOM BAR =================
+const TIPS = [
+  "Crystals refill your tools and slow the CPU for 8 seconds.",
+  "Drop mines in the direction you're running. The CPU aims ahead of you.",
+  "Portals work for the CPU too. Watch for it popping out behind you.",
+  "Lava is deadly to you, but the CPU walks around it.",
+  "Lure the CPU into the swamp. Mud slows it as much as it slows you.",
+  "A decoy pulls the CPU away. If it reaches the decoy, it gets slowed.",
+  "Dash goes in a straight line, so make sure there's no lava ahead."
+];
+const tipEl = document.getElementById("tip");
+let tipIndex = Math.floor(Math.random() * TIPS.length);
+tipEl.textContent = "Tip: " + TIPS[tipIndex];
+setInterval(() => {
+  tipEl.classList.add("fade");
+  setTimeout(() => {
+    tipIndex = (tipIndex + 1) % TIPS.length;
+    tipEl.textContent = "Tip: " + TIPS[tipIndex];
+    tipEl.classList.remove("fade");
+  }, 400);
+}, 6000);
+
+// ================= GO =================
+setText("worldId", Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, "0"));
+loadSettings();
+showScreen("splash");
+requestAnimationFrame(fxLoop);
 draw();
 </script>
 </body>
