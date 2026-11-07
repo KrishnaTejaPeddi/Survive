@@ -5,15 +5,14 @@
 <title>GRIDLOCK</title>
 <style>
   :root {
-    --text: #eef3ff;
-    --dim: #8f9dba;
-    --line: rgba(255, 255, 255, 0.14);
-    --faint: rgba(255, 255, 255, 0.08);
     --blue: #4da3ff;
     --red: #ff5c5c;
-    --violet: #9b7bff;
-    --bar: max(46px, 6.5vh);
-    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --yellow: #ffd23f;
+    --cyan: #7dffea;
+    --edge: #8a8f9c;
+    --dim: #9aa1b2;
+    --line: rgba(255, 255, 255, 0.18);
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: #111; overflow: hidden; }
@@ -21,279 +20,162 @@
   button { font-family: inherit; }
 
   /* ================= MENU SHELL ================= */
+  /* Flat and square, like the game's own HUD: monospace text on black panels. */
   #ui {
     position: fixed; inset: 0; z-index: 10; overflow: hidden; overflow: clip;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    color: var(--text); -webkit-font-smoothing: antialiased;
+    font-family: var(--mono); color: #fff; -webkit-font-smoothing: antialiased;
     -webkit-user-select: none; user-select: none;
-    transition: opacity 0.3s ease;
   }
-  #ui.fade-out { opacity: 0; pointer-events: none; }
   #ui.hidden { display: none; }
+  /* The real game world shows through, just darkened. No blur, so the grid stays crisp. */
+  .backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
+  #ui[data-screen="main"] .backdrop { background: linear-gradient(90deg, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0.32) 100%); }
+  #ui[data-screen="splash"] .backdrop { background: rgba(0, 0, 0, 0.58); }
+  #ui[data-screen="howto"] .backdrop, #ui[data-screen="settings"] .backdrop { background: rgba(0, 0, 0, 0.68); }
+  #ui.paused .backdrop { background: rgba(0, 0, 0, 0.6); }
 
-  /* The darkened, blurred world behind everything. Darker on the left so text is readable,
-     clearer on the right so you can see the world. */
-  .backdrop {
-    position: absolute; inset: 0; transition: background 0.4s ease;
-    -webkit-backdrop-filter: blur(3px) saturate(1.25); backdrop-filter: blur(3px) saturate(1.25);
-    background:
-      radial-gradient(ellipse at 72% 50%, rgba(0, 0, 0, 0) 0%, rgba(2, 4, 10, 0.55) 100%),
-      linear-gradient(90deg, rgba(3, 5, 12, 0.94) 0%, rgba(3, 5, 12, 0.78) 32%, rgba(3, 5, 12, 0.25) 62%, rgba(3, 5, 12, 0.1) 100%);
+  /* ---- HUD chips in the corners (same look as the in-game info panel) ---- */
+  .chip {
+    position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.62); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
   }
-  #ui[data-screen="splash"] .backdrop {
-    -webkit-backdrop-filter: blur(5px) saturate(1.2); backdrop-filter: blur(5px) saturate(1.2);
-    background: radial-gradient(ellipse at 50% 46%, rgba(3, 5, 12, 0.52) 0%, rgba(2, 3, 9, 0.93) 100%);
-  }
-  #ui[data-screen="howto"] .backdrop, #ui[data-screen="settings"] .backdrop {
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    background: radial-gradient(ellipse at 50% 45%, rgba(4, 6, 14, 0.72) 0%, rgba(2, 3, 9, 0.94) 100%);
-  }
-  #ui.paused .backdrop {
-    -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
-    background: rgba(4, 6, 14, 0.68);
-  }
-
-  .grade { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
-    background: linear-gradient(115deg, rgba(60, 90, 255, 0.1), rgba(255, 60, 110, 0.06) 70%, rgba(0, 0, 0, 0)); }
-  #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .scan { position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px); }
-  .grain {
-    position: absolute; inset: 0; pointer-events: none; opacity: 0.07;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grain 0.9s steps(6) infinite;
-  }
-  @keyframes grain {
-    0% { background-position: 0 0; } 20% { background-position: -40px 30px; } 40% { background-position: 30px -50px; }
-    60% { background-position: -60px -20px; } 80% { background-position: 50px 40px; } 100% { background-position: 0 0; }
-  }
-  #ui.fx-off .grain, #ui.fx-off .scan, #ui.fx-off #fx, #ui.fx-off .grade { display: none; }
-
-  /* ---- Letterbox bars (top and bottom) ---- */
-  .bar {
-    position: absolute; left: 0; right: 0; z-index: 3; height: var(--bar);
-    display: flex; align-items: center; gap: 28px; padding: 0 clamp(20px, 4vw, 56px);
-    font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim);
-  }
-  .bar.top { top: 0; justify-content: space-between; background: linear-gradient(rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.7)); border-bottom: 1px solid var(--faint); animation: barTop 0.9s var(--ease) both; }
-  .bar.bottom { bottom: 0; background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.92)); border-top: 1px solid var(--faint); animation: barBottom 0.9s var(--ease) both; }
-  @keyframes barTop { from { transform: translateY(-100%); } }
-  @keyframes barBottom { from { transform: translateY(100%); } }
-  .brand { display: inline-flex; align-items: center; color: #fff; font-weight: 800; }
-  .brand i { width: 14px; height: 14px; margin-right: 12px; border: 2px solid var(--blue); border-radius: 3px; box-shadow: 0 0 10px rgba(77, 163, 255, 0.6); }
-  .live { display: inline-flex; align-items: center; gap: 10px; }
-  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 10px var(--red); animation: pulse 1.6s ease-in-out infinite; }
-  .live b { color: #fff; font-weight: 700; }
-  @keyframes pulse { 50% { opacity: 0.25; } }
-  .hints { display: flex; gap: 22px; flex: none; }
-  .hints span { display: inline-flex; align-items: center; gap: 6px; }
-  .hints kbd { min-width: 24px; height: 24px; font-size: 11px; padding: 0 6px; }
-  .tip { flex: 1; text-align: center; letter-spacing: 0.06em; text-transform: none; font-size: 13px; transition: opacity 0.4s ease; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .chip b { font-weight: 700; }
+  .dim { color: var(--dim); }
+  #ui.paused .chip, #ui.paused .footrow { display: none; }   /* don't cover the game HUD while paused */
+  .tl { top: 16px; left: 16px; }
+  .tr { top: 16px; right: 16px; }
+  .dotmark { display: inline-block; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6); }
+  .dotmark.blue { background: var(--blue); }
+  .dotmark.red { background: var(--red); margin-left: -4px; }
+  .footrow { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 3; display: flex; gap: 12px; align-items: stretch; }
+  .footrow .chip { position: static; }
+  .hints { gap: 18px; }
+  .hint { display: inline-flex; align-items: center; gap: 6px; }
+  .tip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0.04em; color: #c9d0e0; transition: opacity 0.3s steps(3); }
   .tip.fade { opacity: 0; }
-  .ver { flex: none; opacity: 0.55; }
-  @media (max-width: 820px) { .hints { display: none; } }
+  @media (max-width: 860px) { .hints { display: none; } }
+
+  kbd {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 7px;
+    font: 700 12px var(--mono); color: #fff; background: #1c2233; border: 2px solid #56607a; text-transform: none; letter-spacing: 0;
+  }
+  kbd.wide { min-width: 62px; }
 
   /* ================= SCREENS ================= */
-  .screen {
-    position: absolute; inset: 0; z-index: 2; display: none;
-    padding: calc(var(--bar) + 16px) clamp(20px, 6vw, 100px);
-  }
+  .screen { position: absolute; inset: 0; z-index: 2; display: none; padding: 72px clamp(24px, 5vw, 80px) 84px; }
   .screen.active { display: flex; }
   #screen-main.active { align-items: center; justify-content: flex-start; }
-  #screen-splash.active { flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; }
-  #screen-howto.active, #screen-settings.active, #screen-pause.active { align-items: center; justify-content: center; }
+  #screen-splash.active { flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  #screen-howto.active, #screen-settings.active, #screen-pause.active, #screen-victory.active { align-items: center; justify-content: center; }
 
-  .rise { animation: rise 0.8s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms + 60ms); }
-  @keyframes rise { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
-  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+  /* Things appear in a few hard steps, like pixels switching on */
+  .step-in { animation: stepIn 0.5s steps(5) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-  /* ---- The GRIDLOCK wordmark ---- */
-  .wordmark {
-    margin: 0; display: inline-flex; align-items: center; white-space: nowrap;
-    font-size: clamp(54px, 8.6vw, 136px); font-weight: 900; font-style: italic; text-transform: uppercase;
-    letter-spacing: 0.035em; line-height: 0.95;
-    background:
-      linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 150% 0 / 250% 100% no-repeat,
-      linear-gradient(180deg, #ffffff 0%, #e4edff 38%, #8db2ff 52%, #d6e4ff 64%, #ffffff 100%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 0 22px rgba(90, 140, 255, 0.45)) drop-shadow(0 6px 0 rgba(10, 20, 60, 0.6));
-    animation: sweep 6s ease-in-out infinite, glitch 8s steps(1) infinite;
+  /* ---- The title, built out of grid tiles like the game's raised blocks ---- */
+  .wordmark { --s: clamp(7px, 1.05vw, 16px); display: flex; gap: var(--s); }
+  #screen-splash .wordmark { --s: clamp(8px, 1.5vw, 24px); }
+  .glyph { position: relative; display: grid; grid-template-columns: repeat(5, var(--s)); grid-auto-rows: var(--s); }
+  .glyph i { display: block; }
+  .glyph i.on { background: #e9eefc; box-shadow: inset 0 0 0 calc(var(--s) * 0.13) #3b4a7a; }
+  /* the blue dot chasing the red dot around the "O", one square at a time */
+  .glyph .dot {
+    position: absolute; left: 0; top: 0; width: var(--s); height: var(--s); border-radius: 50%;
+    transform: translate(calc(var(--x, 0) * var(--s)), calc(var(--y, 0) * var(--s)));
+    transition: transform 0.18s ease-out; box-shadow: 0 0 0 calc(var(--s) * 0.1) rgba(0, 0, 0, 0.7);
   }
-  @keyframes sweep { from { background-position: 150% 0, 0 0; } to { background-position: -50% 0, 0 0; } }
-  @keyframes glitch {
-    0%, 91%, 100% { transform: none; }
-    92% { transform: translate(-4px, 0) skewX(-4deg); filter: drop-shadow(-4px 0 0 rgba(255, 60, 110, 0.85)) drop-shadow(4px 0 0 rgba(60, 165, 255, 0.85)); }
-    94% { transform: translate(3px, 1px); filter: drop-shadow(3px 0 0 rgba(255, 60, 110, 0.85)) drop-shadow(-3px 0 0 rgba(60, 165, 255, 0.85)); }
-    96% { transform: none; }
-  }
-  /* The "O": a ring where the blue dot chases the red dot forever */
-  .orbit { width: 0.8em; height: 0.8em; flex: none; margin: 0 0.03em; animation: spin 5s linear infinite; filter: drop-shadow(0 0 10px rgba(77, 163, 255, 0.6)); }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .tagline {
-    display: flex; align-items: center; gap: 16px; margin-top: 18px;
-    font-size: clamp(12px, 1.1vw, 15px); letter-spacing: 0.5em; text-transform: uppercase; color: #b4c2e2; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
-  }
-  .tagline::before { content: ""; width: 64px; height: 3px; background: linear-gradient(90deg, var(--blue), var(--red)); box-shadow: 0 0 14px rgba(120, 130, 255, 0.7); }
-  #screen-splash .wordmark { font-size: clamp(60px, 12vw, 190px); }
-  #screen-splash .tagline { justify-content: center; }
-  .press {
-    margin-top: clamp(44px, 10vh, 100px); padding-left: 0.5em;
-    font-size: 14px; letter-spacing: 0.5em; text-transform: uppercase; color: #f2f6ff; text-shadow: 0 0 14px rgba(120, 160, 255, 0.8), 0 1px 8px rgba(0, 0, 0, 0.9);
-    animation: blink 2.2s ease-in-out infinite;
-  }
-  @keyframes blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+  .glyph .dot.blue { background: var(--blue); }
+  .glyph .dot.red { background: var(--red); z-index: 1; }
 
-  /* ---- Main menu list ---- */
-  .left { will-change: transform; }
-  .mlist { display: flex; flex-direction: column; gap: 6px; margin-top: clamp(28px, 5vh, 56px); }
-  .mitem {
-    position: relative; isolation: isolate; display: flex; align-items: center; gap: 20px;
-    width: min(480px, 84vw); padding: 15px 38px 15px 22px; border: 0; background: transparent;
-    color: #b4c0da; text-align: left; cursor: pointer;
-    clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
-    transition: color 0.2s ease, transform 0.3s var(--ease);
-  }
-  .mitem::before {
-    content: ""; position: absolute; inset: 0; z-index: -1;
-    background: linear-gradient(90deg, rgba(77, 163, 255, 0.36), rgba(122, 92, 255, 0.12) 60%, rgba(122, 92, 255, 0));
-    transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease);
-  }
-  .mitem::after {
-    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    background: linear-gradient(var(--blue), var(--violet)); box-shadow: 0 0 18px var(--blue);
-    transform: scaleY(0); transition: transform 0.25s ease;
-  }
-  .mitem.primary::after { transform: scaleY(1); opacity: 0.45; }
-  .mitem:hover, .mitem:focus-visible { outline: none; color: #fff; transform: translateX(16px); }
-  .mitem:hover::before, .mitem:focus-visible::before { transform: scaleX(1); }
-  .mitem:hover::after, .mitem:focus-visible::after { transform: scaleY(1); opacity: 1; }
-  .mitem:active { transform: translateX(16px) scale(0.985); }
-  .idx { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.32); transition: color 0.2s; }
-  .mitem:hover .idx, .mitem:focus-visible .idx { color: var(--blue); }
-  .mlabel { display: block; font-size: clamp(22px, 2.3vw, 32px); font-weight: 800; font-style: italic; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.1; }
-  .msub { display: block; margin-top: 4px; font-size: 12.5px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.36); transition: color 0.2s; }
-  .mitem:hover .msub, .mitem:focus-visible .msub { color: #a9bde6; }
-  .chev { margin-left: auto; font-size: 26px; line-height: 1; opacity: 0; transform: translateX(-8px); transition: opacity 0.2s, transform 0.25s var(--ease); }
-  .mitem:hover .chev, .mitem:focus-visible .chev { opacity: 0.9; transform: none; }
+  .tagline { display: flex; align-items: center; gap: 14px; margin-top: 24px; font-size: 14px; letter-spacing: 0.42em; text-transform: uppercase; color: #cfd6e8; }
+  .cells { display: inline-flex; gap: 3px; }
+  .cells i { width: 10px; height: 10px; background: var(--blue); }
+  .cells i:nth-child(2) { background: #7a8fe0; }
+  .cells i:nth-child(3) { background: #a98ac0; }
+  .cells i:nth-child(4) { background: #d57a9a; }
+  .cells i:nth-child(5) { background: var(--red); }
+  .press { margin-top: 56px; font-size: 16px; letter-spacing: 0.4em; text-transform: uppercase; animation: blink 1.1s steps(1) infinite; }
+  .press::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 16px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6); }
+  @keyframes blink { 50% { opacity: 0.2; } }
 
-  /* ---- Player record card ---- */
-  .card {
-    position: absolute; right: clamp(24px, 6vw, 110px); bottom: calc(var(--bar) + clamp(24px, 7vh, 80px)); width: 310px;
-    padding: 24px 26px 22px; border: 1px solid var(--line);
-    background: linear-gradient(160deg, rgba(14, 20, 36, 0.84), rgba(8, 11, 22, 0.8));
-    clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  /* ---- Main menu ---- */
+  .left { display: flex; flex-direction: column; align-items: flex-start; }
+  .mlist { display: flex; flex-direction: column; gap: 8px; width: min(460px, 86vw); margin-top: 40px; }
+  .mitem, .btn {
+    display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 18px; cursor: pointer; text-align: left;
+    background: rgba(0, 0, 0, 0.66); border: 2px solid var(--line); color: #fff; font: inherit; text-transform: uppercase;
   }
-  .card::before { content: ""; position: absolute; left: 0; top: 0; right: 24px; height: 2px; background: linear-gradient(90deg, var(--blue), var(--violet), var(--red)); }
-  .card h4 { display: flex; justify-content: space-between; margin: 0 0 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); }
-  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
-  .cstat b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .cstat span { font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
-  .cstat.hero { grid-column: 1 / -1; padding-bottom: 14px; border-bottom: 1px solid var(--faint); }
-  .cstat.hero b { font-size: 46px; font-style: italic; line-height: 1.1; background: linear-gradient(90deg, #fff, #8db2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .mitem:hover, .mitem:focus-visible, .btn:hover, .btn:focus-visible { outline: none; border-color: var(--blue); background: rgba(77, 163, 255, 0.2); }
+  .mitem.primary, .btn.primary { border-color: rgba(77, 163, 255, 0.75); }
+  /* the blue dot (that's you) marks the selected item */
+  .cur { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6); transform: scale(0); transition: transform 0.12s steps(2); }
+  .mitem:hover .cur, .mitem:focus-visible .cur, .btn:hover .cur, .btn:focus-visible .cur { transform: scale(1); }
+  .mlabel { display: block; font-size: 20px; font-weight: 700; letter-spacing: 0.12em; }
+  .msub { display: block; margin-top: 4px; font-size: 12px; letter-spacing: 0.03em; text-transform: none; color: var(--dim); }
+
+  .card { position: absolute; right: clamp(24px, 5vw, 80px); bottom: 84px; width: 320px; padding: 16px 18px; background: rgba(0, 0, 0, 0.72); border: 1px solid var(--edge); }
+  .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); }
+  .sq { display: inline-block; width: 12px; height: 12px; background: var(--blue); }
+  .cbest { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .cbest b { display: block; font-size: 40px; line-height: 1.1; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .cbest span, .cgrid span, .stats span { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; margin-top: 14px; }
+  .cgrid b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
   @media (max-width: 980px) { .card { display: none; } }
 
-  /* ---- Launch sequence (after pressing Play) ---- */
-  .launch { position: absolute; inset: 0; z-index: 6; display: none; flex-direction: column; align-items: center; justify-content: center; background: #02040a; }
-  #ui.launching .launch { display: flex; animation: fadein 0.35s ease both; }
-  @keyframes fadein { from { opacity: 0; } }
-  .launch .lt { padding-left: 0.6em; font-size: 12px; letter-spacing: 0.6em; text-transform: uppercase; color: var(--dim); }
-  .launch .lw { margin-top: 12px; padding-left: 0.18em; font-size: clamp(28px, 4vw, 54px); font-weight: 900; font-style: italic; letter-spacing: 0.18em; text-transform: uppercase; }
-  .lbar { width: min(420px, 70vw); height: 3px; margin-top: 30px; overflow: hidden; background: rgba(255, 255, 255, 0.1); }
-  .lbar i { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--blue), var(--red)); animation: load 1s cubic-bezier(0.3, 0.6, 0.2, 1) forwards; }
-  @keyframes load { to { transform: scaleX(1); } }
-
-  /* ---- Light sweep between screens ---- */
-  .sweep {
-    position: absolute; top: -10%; bottom: -10%; left: 0; width: 38vw; z-index: 5; pointer-events: none; opacity: 0;
-    background: linear-gradient(90deg, rgba(120, 170, 255, 0), rgba(190, 215, 255, 0.26), rgba(120, 170, 255, 0));
-    transform: translateX(-60vw) skewX(-20deg);
-  }
-  #ui.sweeping .sweep { animation: sweepAcross 0.65s cubic-bezier(0.4, 0, 0.2, 1) both; }
-  @keyframes sweepAcross {
-    0% { opacity: 0; transform: translateX(-60vw) skewX(-20deg); }
-    12%, 88% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(130vw) skewX(-20deg); }
-  }
-
-  /* ================= PANELS (How to play, Settings, Pause) ================= */
-  .panel {
-    position: relative; width: min(900px, 94vw); max-height: calc(100vh - 2 * var(--bar) - 30px); overflow: auto;
-    padding: 34px 42px 36px; border: 1px solid var(--line);
-    background: linear-gradient(160deg, rgba(14, 20, 36, 0.88), rgba(7, 10, 20, 0.92));
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
-    animation: pop 0.55s var(--ease) both;
-  }
-  .panel::before, .panel::after { content: ""; position: absolute; width: 28px; height: 28px; pointer-events: none; }
-  .panel::before { top: 0; left: 0; border-top: 2px solid var(--blue); border-left: 2px solid var(--blue); }
-  .panel::after { bottom: 0; right: 0; border-bottom: 2px solid var(--red); border-right: 2px solid var(--red); }
-  .panel.narrow { width: min(600px, 94vw); }
-  .panel.center { width: min(480px, 94vw); text-align: center; }
+  /* ================= PANELS (How to play, Settings, Pause, Victory) ================= */
+  .panel { width: min(860px, 94vw); max-height: calc(100vh - 150px); overflow: auto; padding: 28px 32px 30px; background: rgba(0, 0, 0, 0.78); border: 1px solid var(--edge); animation: stepIn 0.4s steps(4) both; }
+  .panel.narrow { width: min(580px, 94vw); }
+  .panel.center { width: min(470px, 94vw); text-align: center; }
   .panel::-webkit-scrollbar { width: 8px; }
-  .panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 8px; }
-  .ph { display: flex; align-items: center; gap: 16px; }
-  .pno { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.2em; color: var(--blue); }
-  .ph h2 { margin: 0; font-size: 30px; font-weight: 900; font-style: italic; letter-spacing: 0.14em; text-transform: uppercase; }
-  .pline { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(110, 168, 255, 0.7), rgba(255, 255, 255, 0)); }
+  .panel::-webkit-scrollbar-thumb { background: #56607a; }
+  .ph { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
   .panel.center .ph { justify-content: center; }
-  .panel.center .pline { display: none; }
-  .panel h3 { margin: 28px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--blue); }
-  .lead { margin: 14px 0 0; font-size: 15.5px; line-height: 1.6; color: #b9c4de; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 44px; }
-  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } .panel { padding: 26px 22px; } }
+  .ph h2 { margin: 0; font-size: 20px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .panel h3 { margin: 24px 0 4px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--blue); }
+  .lead { margin: 16px 0 0; font-size: 14px; line-height: 1.7; color: #d0d6e6; text-align: left; }
+  .lead b { color: #fff; }
+  .cy { color: var(--cyan); font-weight: 700; }
+  .cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0 36px; }
+  @media (max-width: 800px) { .cols { grid-template-columns: 1fr; } .panel { padding: 22px 18px; } }
 
-  .list { list-style: none; margin: 0; padding: 0; }
-  .list li { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--faint); font-size: 14.5px; line-height: 1.4; color: #cfd8ee; }
+  .list { list-style: none; margin: 0; padding: 0; text-align: left; }
+  .list li { display: flex; align-items: center; gap: 14px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.45; color: #d0d6e6; }
   .list li:last-child { border-bottom: 0; }
   .list b { color: #fff; }
-  .keys { display: inline-flex; gap: 6px; min-width: 160px; flex: none; }
-  .icon { display: flex; justify-content: center; width: 34px; flex: none; }
-  kbd {
-    display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 9px;
-    font: 700 14px/1 ui-monospace, "SF Mono", Menlo, monospace; color: #fff;
-    background: linear-gradient(#2c3552, #1d2339); border: 1px solid rgba(255, 255, 255, 0.18); border-bottom-width: 3px; border-radius: 6px;
-  }
-  kbd.wide { min-width: 66px; }
-  .dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c); }
-  .gem { display: block; width: 13px; height: 20px; background: #7dffea; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .keys { display: inline-flex; gap: 4px; flex: none; min-width: 138px; }
+  .icon { display: flex; justify-content: center; flex: none; width: 30px; }
+  .dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6); }
+  .gem { display: block; width: 16px; height: 24px; background: var(--cyan); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
-  /* ---- Buttons used inside panels ---- */
-  .btn {
-    position: relative; appearance: none; -webkit-appearance: none; cursor: pointer; width: 100%;
-    display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 26px;
-    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); color: var(--text);
-    font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
-    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-    transition: transform 0.2s var(--ease), background 0.2s, border-color 0.2s;
-  }
-  .btn .arrow { font-size: 22px; line-height: 1; opacity: 0.55; transition: transform 0.2s, opacity 0.2s; }
-  .btn:hover, .btn:focus-visible { outline: none; transform: translateX(6px); background: rgba(110, 168, 255, 0.2); border-color: rgba(110, 168, 255, 0.8); }
-  .btn:hover .arrow, .btn:focus-visible .arrow { opacity: 1; transform: translateX(3px); }
-  .btn.primary { border-color: transparent; background: linear-gradient(135deg, #3d8bff, #7a5cff); }
-  .btn.primary:hover, .btn.primary:focus-visible { background: linear-gradient(135deg, #5a9dff, #8f73ff); }
-  .btn.small { width: auto; display: inline-flex; padding: 13px 30px 13px 22px; margin-top: 28px; }
-  .menu { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .btn { width: auto; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; }
+  .btn.small { display: inline-flex; margin-top: 24px; padding: 12px 22px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .menu .btn { width: 100%; }
 
-  /* ---- Settings rows ---- */
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 8px; border-bottom: 1px solid var(--faint); transition: background 0.2s; }
-  .row:focus-within { background: linear-gradient(90deg, rgba(77, 163, 255, 0.1), rgba(77, 163, 255, 0)); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+  .row:focus-within { background: rgba(77, 163, 255, 0.1); }
   .row:last-of-type { border-bottom: 0; }
-  .label { font-size: 16px; font-weight: 600; }
-  .hint { margin-top: 4px; font-size: 13px; color: var(--dim); }
-  .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); }
-  .seg button { appearance: none; border: 0; background: transparent; cursor: pointer; color: var(--dim); padding: 9px 16px; border-radius: 5px; font-size: 14px; font-weight: 700; transition: background 0.2s, color 0.2s; }
+  .label { font-size: 15px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .hint2 { margin-top: 4px; font-size: 12px; color: var(--dim); }
+  .seg { display: inline-flex; gap: 0; border: 2px solid var(--line); }
+  .seg button { appearance: none; border: 0; background: transparent; cursor: pointer; padding: 9px 14px; color: var(--dim); font: 700 13px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
   .seg button:hover { color: #fff; }
-  .seg button[aria-pressed="true"] { color: #fff; background: linear-gradient(135deg, #3d8bff, #7a5cff); box-shadow: 0 4px 14px rgba(77, 120, 255, 0.4); }
-  .seg button:focus-visible, .switch:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
-  .switch { appearance: none; position: relative; width: 52px; height: 28px; padding: 0; cursor: pointer; flex: none; border-radius: 4px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.1); transform: skewX(-12deg); transition: background 0.2s; }
-  .switch i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 2px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); transition: transform 0.2s var(--ease); }
-  .switch[aria-checked="true"] { border-color: transparent; background: linear-gradient(135deg, #3d8bff, #7a5cff); }
-  .switch[aria-checked="true"] i { transform: translateX(24px); }
+  .seg button[aria-pressed="true"] { color: #fff; background: var(--blue); }
+  .seg button:focus-visible, .switch:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+  .switch { appearance: none; position: relative; flex: none; width: 56px; height: 28px; padding: 0; cursor: pointer; border: 2px solid var(--line); background: transparent; }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: var(--dim); transition: transform 0.12s steps(3); }
+  .switch[aria-checked="true"] { border-color: var(--blue); background: rgba(77, 163, 255, 0.25); }
+  .switch[aria-checked="true"] i { background: var(--blue); transform: translateX(28px); }
 
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 26px; }
-  .stats div { padding: 14px 8px; text-align: center; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
-  .stats b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .stats span { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 22px 0; }
+  .stats div { padding: 12px 6px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); }
+  .stats b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .vtime { margin: 20px 0 0; font-size: 56px; font-weight: 700; color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .vnote { margin: 4px 0 0; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--yellow); }
+
+  /* ---- Screen transition: a wave of 40px grid squares ---- */
+  #wipe { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -303,70 +185,56 @@
 
 <div id="ui" data-screen="splash">
 
-  <!-- ===== atmosphere layers ===== -->
   <div class="backdrop"></div>
-  <div class="grade"></div>
-  <canvas id="fx"></canvas>
-  <div class="scan"></div>
-  <div class="grain"></div>
 
-  <!-- ===== letterbox bars ===== -->
-  <header class="bar top">
-    <span class="brand"><i></i>Gridlock</span>
-    <span class="live"><i></i>World <b id="worldId">0000</b></span>
-  </header>
-  <footer class="bar bottom">
-    <div class="hints">
-      <span><kbd>&uarr;</kbd><kbd>&darr;</kbd>Navigate</span>
-      <span><kbd>&crarr;</kbd>Select</span>
-      <span><kbd>Esc</kbd>Back</span>
+  <!-- corner chips, like the in-game HUD -->
+  <div class="chip tl"><i class="dotmark blue"></i><i class="dotmark red"></i>Gridlock</div>
+  <div class="chip tr"><span class="dim">World</span><b id="worldId">0000</b></div>
+  <div class="footrow">
+    <div class="chip hints">
+      <span class="hint"><kbd>&uarr;</kbd><kbd>&darr;</kbd>Navigate</span>
+      <span class="hint"><kbd class="wide">Enter</kbd>Select</span>
+      <span class="hint"><kbd>Esc</kbd>Back</span>
     </div>
-    <div class="tip" id="tip"></div>
-    <span class="ver">v1.1</span>
-  </footer>
+    <div class="chip tip" id="tip"></div>
+    <div class="chip"><span class="dim">v1.2</span></div>
+  </div>
 
   <!-- ============ PRESS ANY KEY ============ -->
   <section class="screen active" id="screen-splash" data-action="enter">
-    <div class="rise" style="--i:0">
-      <h1 class="wordmark">GRID<svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="36" fill="none" stroke="#e4edff" stroke-width="15"/><circle cx="50" cy="14" r="10" fill="#ff5c5c"/><circle cx="24.5" cy="24.5" r="10" fill="#4da3ff"/></svg>LOCK</h1>
-    </div>
-    <div class="tagline rise" style="--i:1">Outrun the machine</div>
-    <div class="press rise" style="--i:3">Press any key</div>
+    <div class="step-in" style="--i:0"><div class="wordmark" id="wm-splash"></div></div>
+    <div class="tagline step-in" style="--i:2"><span class="cells"><i></i><i></i><i></i><i></i><i></i></span>Outrun the machine</div>
+    <div class="press step-in" style="--i:4">Press any key</div>
   </section>
 
   <!-- ============ MAIN MENU ============ -->
   <section class="screen" id="screen-main">
     <div class="left">
-      <div class="rise" style="--i:0">
-        <h1 class="wordmark">GRID<svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="36" fill="none" stroke="#e4edff" stroke-width="15"/><circle cx="50" cy="14" r="10" fill="#ff5c5c"/><circle cx="24.5" cy="24.5" r="10" fill="#4da3ff"/></svg>LOCK</h1>
-      </div>
-      <div class="tagline rise" style="--i:1">Outrun the machine</div>
+      <div class="step-in" style="--i:0"><div class="wordmark" id="wm-main"></div></div>
+      <div class="tagline step-in" style="--i:1"><span class="cells"><i></i><i></i><i></i><i></i><i></i></span>Outrun the machine</div>
       <nav class="mlist">
-        <button class="mitem primary rise" style="--i:2" data-action="play" data-focus>
-          <span class="idx">01</span>
-          <span><span class="mlabel">Play</span><span class="msub">Enter the grid and start a run</span></span>
-          <span class="chev">&rsaquo;</span>
+        <button class="mitem primary step-in" style="--i:2" data-action="play" data-focus>
+          <span class="cur"></span>
+          <span><span class="mlabel">Play</span><span class="msub">Find all 4 crystals before the CPU finds you</span></span>
         </button>
-        <button class="mitem rise" style="--i:3" data-action="howto">
-          <span class="idx">02</span>
-          <span><span class="mlabel">How to play</span><span class="msub">Controls, tools and the world</span></span>
-          <span class="chev">&rsaquo;</span>
+        <button class="mitem step-in" style="--i:3" data-action="howto">
+          <span class="cur"></span>
+          <span><span class="mlabel">How to play</span><span class="msub">Controls, abilities and the world</span></span>
         </button>
-        <button class="mitem rise" style="--i:4" data-action="settings">
-          <span class="idx">03</span>
+        <button class="mitem step-in" style="--i:4" data-action="settings">
+          <span class="cur"></span>
           <span><span class="mlabel">Settings</span><span class="msub">Difficulty, sound and display</span></span>
-          <span class="chev">&rsaquo;</span>
         </button>
       </nav>
     </div>
-    <aside class="card rise" style="--i:5">
-      <h4><span>Pilot record</span><span>&#9679;</span></h4>
+    <aside class="card step-in" style="--i:5">
+      <div class="ch"><i class="sq"></i>Pilot record</div>
+      <div class="cbest"><b id="c-best">0.0s</b><span>Best survival</span></div>
       <div class="cgrid">
-        <div class="cstat hero"><b id="c-best">0.0s</b><span>Best survival</span></div>
-        <div class="cstat"><b id="c-runs">0</b><span>Runs</span></div>
-        <div class="cstat"><b id="c-crystals">0</b><span>Crystals</span></div>
-        <div class="cstat"><b id="c-time">0s</b><span>Time survived</span></div>
-        <div class="cstat"><b id="c-diff">Normal</b><span>Difficulty</span></div>
+        <div><b id="c-runs">0</b><span>Runs</span></div>
+        <div><b id="c-wins">0</b><span>Wins</span></div>
+        <div><b id="c-fast">--</b><span>Fastest win</span></div>
+        <div><b id="c-crystals">0</b><span>Crystals</span></div>
       </div>
     </aside>
   </section>
@@ -374,42 +242,44 @@
   <!-- ============ HOW TO PLAY ============ -->
   <section class="screen" id="screen-howto">
     <div class="panel">
-      <div class="ph"><span class="pno">02</span><h2>How to play</h2><span class="pline"></span></div>
-      <p class="lead">Survive as long as you can. The red CPU never stops hunting you, and it gets faster every second. Use your tools, explore the world, and never stop moving.</p>
+      <div class="ph"><i class="sq"></i><h2>How to play</h2></div>
+      <p class="lead"><b>Objective:</b> collect all <span class="cy">4 big crystals</span> before the CPU catches you. Each one is a huge power surge. The red CPU never stops hunting you, and the longer a round goes, the faster and smarter it gets. Follow the arrows at the edge of the screen to find the crystals.</p>
       <div class="cols">
         <div>
           <h3>Controls</h3>
           <ul class="list">
             <li><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move</span></li>
-            <li><span class="keys"><kbd class="wide">Space</kbd></span><span><b>Mine.</b> Slows the CPU when it steps on it</span></li>
-            <li><span class="keys"><kbd>E</kbd></span><span><b>Slow pulse.</b> Slows the CPU if it's close</span></li>
-            <li><span class="keys"><kbd>F</kbd></span><span><b>Dash.</b> Leap 5 squares forward</span></li>
-            <li><span class="keys"><kbd>Q</kbd></span><span><b>Decoy.</b> A fake you the CPU chases</span></li>
+            <li><span class="keys"><kbd class="wide">Space</kbd></span><span><b>Mine.</b> Freezes the CPU when it steps on it</span></li>
+            <li><span class="keys"><kbd>E</kbd></span><span><b>Pulse.</b> Freezes and slows the CPU nearby</span></li>
+            <li><span class="keys"><kbd>F</kbd></span><span><b>Dash.</b> Leap 8 squares over walls and lava</span></li>
+            <li><span class="keys"><kbd>Q</kbd></span><span><b>Decoy.</b> A fake you that traps the CPU</span></li>
+            <li><span class="keys"><kbd>R</kbd></span><span><b>Phase.</b> Walk through walls for 3 seconds</span></li>
+            <li><span class="keys"><kbd>T</kbd></span><span><b>Time stop.</b> Freeze the CPU for 3 seconds</span></li>
+            <li><span class="keys"><kbd class="wide">Shift</kbd></span><span><b>Overdrive.</b> Move twice as fast for 4 seconds</span></li>
             <li><span class="keys"><kbd class="wide">Esc</kbd></span><span>Pause</span></li>
           </ul>
         </div>
         <div>
           <h3>The world</h3>
           <ul class="list">
+            <li><span class="icon"><i class="gem"></i></span><span><b>Big crystals.</b> Refill every ability and freeze the CPU. Get all 4 to win</span></li>
             <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in glowing pairs. The CPU uses them too</span></li>
-            <li><span class="icon"><i class="gem"></i></span><span><b>Crystals</b> refill your tools and slow the CPU</span></li>
             <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you back to the start. The CPU avoids it</span></li>
             <li><span class="icon"><i class="dot" style="--c:#6a7d3f"></i></span><span><b>Mud</b> slows everyone down</span></li>
             <li><span class="icon"><i class="dot" style="--c:#dfe9ef"></i></span><span><b>Ice</b> speeds everyone up</span></li>
-            <li><span class="icon"><i class="dot" style="--c:#8272e0"></i></span><span><b>Crystal Caves</b> hold the most crystals</span></li>
           </ul>
         </div>
       </div>
-      <button class="btn small" data-action="back-main" data-focus><span class="arrow">&lsaquo;</span><span>Back</span></button>
+      <button class="btn small" data-action="back-main" data-focus><span class="cur"></span>Back</button>
     </div>
   </section>
 
   <!-- ============ SETTINGS ============ -->
   <section class="screen" id="screen-settings">
     <div class="panel narrow">
-      <div class="ph"><span class="pno">03</span><h2>Settings</h2><span class="pline"></span></div>
-      <div class="row" style="margin-top: 14px;">
-        <div><div class="label">Difficulty</div><div class="hint">How quickly the CPU ramps up</div></div>
+      <div class="ph"><i class="sq"></i><h2>Settings</h2></div>
+      <div class="row">
+        <div><div class="label">Difficulty</div><div class="hint2">How fast the CPU ramps up, and how fast it can get</div></div>
         <div class="seg" role="group" aria-label="Difficulty">
           <button data-action="difficulty" data-value="Easy">Easy</button>
           <button data-action="difficulty" data-value="Normal">Normal</button>
@@ -417,48 +287,55 @@
         </div>
       </div>
       <div class="row">
-        <div><div class="label">Sound</div><div class="hint">Menu and game sound effects</div></div>
+        <div><div class="label">Sound</div><div class="hint2">Menu and game sound effects</div></div>
         <button class="switch" id="sw-sound" role="switch" aria-label="Sound" data-action="toggle-sound"><i></i></button>
       </div>
       <div class="row">
-        <div><div class="label">Minimap</div><div class="hint">Show the map in the corner</div></div>
+        <div><div class="label">Minimap</div><div class="hint2">Show the map in the corner</div></div>
         <button class="switch" id="sw-minimap" role="switch" aria-label="Minimap" data-action="toggle-minimap"><i></i></button>
       </div>
-      <div class="row">
-        <div><div class="label">Visual effects</div><div class="hint">Film grain, particles and glow in the menus</div></div>
-        <button class="switch" id="sw-fx" role="switch" aria-label="Visual effects" data-action="toggle-fx"><i></i></button>
-      </div>
-      <button class="btn small" data-action="settings-back" data-focus><span class="arrow">&lsaquo;</span><span>Back</span></button>
+      <button class="btn small" data-action="settings-back" data-focus><span class="cur"></span>Back</button>
     </div>
   </section>
 
   <!-- ============ PAUSE ============ -->
   <section class="screen" id="screen-pause">
     <div class="panel center">
-      <div class="ph"><h2>Paused</h2></div>
+      <div class="ph"><i class="sq"></i><h2>Paused</h2></div>
       <div class="stats">
         <div><b id="st-time">0.0s</b><span>Survived</span></div>
         <div><b id="st-best">0.0s</b><span>Best</span></div>
-        <div><b id="st-crystals">0</b><span>Crystals</span></div>
+        <div><b id="st-crystals">0/4</b><span>Crystals</span></div>
       </div>
       <nav class="menu">
-        <button class="btn primary" data-action="resume" data-focus><span>Resume</span><span class="arrow">&rsaquo;</span></button>
-        <button class="btn" data-action="restart"><span>Restart</span><span class="arrow">&rsaquo;</span></button>
-        <button class="btn" data-action="pause-settings"><span>Settings</span><span class="arrow">&rsaquo;</span></button>
-        <button class="btn" data-action="quit"><span>Quit to menu</span><span class="arrow">&rsaquo;</span></button>
+        <button class="btn primary" data-action="resume" data-focus><span class="cur"></span>Resume</button>
+        <button class="btn" data-action="restart"><span class="cur"></span>Restart</button>
+        <button class="btn" data-action="pause-settings"><span class="cur"></span>Settings</button>
+        <button class="btn" data-action="quit"><span class="cur"></span>Quit to menu</button>
       </nav>
     </div>
   </section>
 
-  <!-- ===== transitions ===== -->
-  <div class="sweep"></div>
-  <div class="launch">
-    <div class="lt">Entering</div>
-    <div class="lw">The Grid</div>
-    <div class="lbar"><i></i></div>
-  </div>
+  <!-- ============ VICTORY ============ -->
+  <section class="screen" id="screen-victory">
+    <div class="panel center">
+      <div class="ph"><i class="sq" style="background: var(--cyan)"></i><h2>All crystals collected</h2></div>
+      <p class="vtime" id="v-time">0.0s</p>
+      <p class="vnote" id="v-note"></p>
+      <div class="stats">
+        <div><b id="v-wins">0</b><span>Wins</span></div>
+        <div><b id="v-fast">--</b><span>Fastest</span></div>
+        <div><b id="v-crystals">0</b><span>Crystals</span></div>
+      </div>
+      <nav class="menu">
+        <button class="btn primary" data-action="again" data-focus><span class="cur"></span>Play again</button>
+        <button class="btn" data-action="quit"><span class="cur"></span>Main menu</button>
+      </nav>
+    </div>
+  </section>
 
 </div>
+<canvas id="wipe"></canvas>
 
 <script>
 // ---- SETTINGS (change these numbers to play with it) ----
@@ -467,7 +344,6 @@ const CELL = 40;         // each square is 40 pixels wide
 
 // What the game is doing right now: "menu", "playing" or "paused"
 let gameState = "menu";
-const menuParallax = { x: 0, y: 0 };   // mouse position (-1 to 1) for a subtle depth effect in menus
 
 // ---- THE TWO PLAYERS ----
 // x = column, y = row. Player 1 starts on the left, player 2 on the right.
@@ -788,18 +664,23 @@ function nextStepToward(fromX, fromY, toX, toY) {   // returns 0-3 (a direction)
 }
 
 // ---- TOOLS AND WEAPONS ----
-// The CPU can never be destroyed. You can only SLOW it down.
-const SLOW_FACTOR = 3;        // while slowed, the CPU waits 3x longer between steps
+// The CPU can never be destroyed. But you can slow it, freeze it, trap it, or outrun it.
+const SLOW_FACTOR = 3;        // while slowed, the CPU waits this much longer between steps (weakens late in a round)
 const SLOW_TIME = 5000;       // how long a slow lasts, in milliseconds
 let slowedUntil = 0;          // the clock time when the slow wears off
+let frozenUntil = 0;          // while frozen, the CPU can't move at all
 
-// Tool: mines. Press SPACE to drop one where you stand.
-const MAX_MINES = 5;
+function slowCpu(ms) { slowedUntil = Math.max(slowedUntil, Date.now() + ms); }
+function freezeCpu(ms) { frozenUntil = Math.max(frozenUntil, Date.now() + ms); }
+
+// SPACE: Mines. Drop one where you stand. A CPU that steps on it is frozen, then slowed.
+const MAX_MINES = 8;
+const MINE_FREEZE = 1000;
 let mineCount = MAX_MINES;
 const mines = [];             // list of squares that have a mine on them
-setInterval(() => {           // you get one mine back every 2 seconds
+setInterval(() => {           // you get one mine back every 1.5 seconds
   if (mineCount < MAX_MINES && gameState === "playing") mineCount++;
-}, 2000);
+}, 1500);
 
 function dropMine() {
   if (mineCount <= 0) return;
@@ -807,9 +688,10 @@ function dropMine() {
   mineCount--;
 }
 
-// Weapon: slow pulse. Press E to blast a ring around you.
-const PULSE_RANGE = 12;       // how many squares away it reaches
-const PULSE_COOLDOWN = 3000;  // waiting time between uses
+// E: Pulse. A blast around you. A CPU caught in it is frozen for a moment, then slowed.
+const PULSE_RANGE = 16;       // how many squares away it reaches
+const PULSE_COOLDOWN = 4000;  // waiting time between uses
+const PULSE_FREEZE = 1500;
 let pulseReadyAt = 0;
 let pulseFlashUntil = 0;      // only used to draw the ring
 
@@ -820,28 +702,40 @@ function firePulse() {
   pulseFlashUntil = now + 300;
   beep(420, 0.25, "sine", 0.05);
   const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-  if (distance <= PULSE_RANGE) slowedUntil = now + SLOW_TIME;
+  if (distance <= PULSE_RANGE) {
+    freezeCpu(PULSE_FREEZE);
+    slowCpu(SLOW_TIME);
+  }
 }
 
-// Ability: dash. Press F to leap forward in the direction you last moved.
-const DASH_DISTANCE = 5;      // how many squares you leap
-const DASH_COOLDOWN = 2500;   // waiting time between dashes
+// F: Dash. Leap up to 8 squares in the direction you last moved. You jump OVER walls and lava.
+const DASH_DISTANCE = 8;      // how many squares you can leap
+const DASH_COOLDOWN = 2000;   // waiting time between dashes
 let dashReadyAt = 0;
 
 function dash() {
   const now = Date.now();
   if (now < dashReadyAt) return;                    // still recharging
   if (p1.dirX === 0 && p1.dirY === 0) return;       // you haven't moved yet
-  dashReadyAt = now + DASH_COOLDOWN;
-  for (let i = 0; i < DASH_DISTANCE; i++) {
-    move(p1, p1.dirX, p1.dirY);                     // take 5 steps at once
+  // Look along the line and land on the farthest open square (walls and lava get skipped over)
+  let landX = p1.x, landY = p1.y;
+  for (let k = 1; k <= DASH_DISTANCE; k++) {
+    const x = p1.x + p1.dirX * k;
+    const y = p1.y + p1.dirY * k;
+    if (x < 0 || y < 0 || x >= N || y >= N) break;
+    if (tile[y * N + x] === 0) { landX = x; landY = y; }
   }
+  if (landX === p1.x && landY === p1.y) return;     // nowhere to land, so keep the dash
+  dashReadyAt = now + DASH_COOLDOWN;
+  beep(600, 0.12, "triangle", 0.05);
+  arrive(p1, landX, landY);
 }
 
-// Ability: decoy. Press Q to drop a fake you. The CPU chases the fake
-// instead of the real you. If the CPU reaches it, the CPU gets slowed.
-const DECOY_TIME = 4000;       // how long the decoy lasts
-const DECOY_COOLDOWN = 6000;  // waiting time between decoys
+// Q: Decoy. Drop a fake you. The CPU chases it instead of the real you.
+// A CPU that reaches it is frozen, then slowed.
+const DECOY_TIME = 6000;       // how long the decoy lasts
+const DECOY_COOLDOWN = 6000;   // waiting time between decoys
+const DECOY_FREEZE = 2500;
 let decoy = null;              // either nothing, or {x, y, until}
 let decoyReadyAt = 0;
 
@@ -850,6 +744,62 @@ function dropDecoy() {
   if (now < decoyReadyAt) return;
   decoyReadyAt = now + DECOY_COOLDOWN;
   decoy = { x: p1.x, y: p1.y, until: now + DECOY_TIME };
+}
+
+// R: Phase. Walk straight through walls for 3 seconds.
+const PHASE_TIME = 3000;
+const PHASE_COOLDOWN = 12000;
+let phaseUntil = 0;
+let phaseReadyAt = 0;
+
+function startPhase() {
+  const now = Date.now();
+  if (now < phaseReadyAt) return;
+  phaseReadyAt = now + PHASE_COOLDOWN;
+  phaseUntil = now + PHASE_TIME;
+  beep(300, 0.3, "triangle", 0.05);
+}
+
+// If Phase ends while you're inside a wall, you get pushed out to the nearest open square
+function ejectFromWall() {
+  if (tile[p1.y * N + p1.x] === 0) return;
+  for (let r = 1; r <= 15; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;   // only look at the ring r squares away
+        const x = p1.x + dx, y = p1.y + dy;
+        if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        if (tile[y * N + x] === 0) { p1.x = x; p1.y = y; return; }
+      }
+    }
+  }
+}
+
+// T: Time stop. The CPU is frozen solid for 3 seconds.
+const STOP_TIME = 3000;
+const STOP_COOLDOWN = 22000;
+let stopReadyAt = 0;
+
+function timeStop() {
+  const now = Date.now();
+  if (now < stopReadyAt) return;
+  stopReadyAt = now + STOP_COOLDOWN;
+  freezeCpu(STOP_TIME);
+  beep(220, 0.5, "sawtooth", 0.04);
+}
+
+// SHIFT: Overdrive. You move twice as fast for 4 seconds.
+const BOOST_TIME = 4000;
+const BOOST_COOLDOWN = 10000;
+let boostUntil = 0;
+let boostReadyAt = 0;
+
+function startBoost() {
+  const now = Date.now();
+  if (now < boostReadyAt) return;
+  boostReadyAt = now + BOOST_COOLDOWN;
+  boostUntil = now + BOOST_TIME;
+  beep(500, 0.25, "square", 0.025);
 }
 
 // ---- SETUP THE DRAWING AREA ----
@@ -871,11 +821,17 @@ function move(player, dx, dy) {
   const nx = Math.max(0, Math.min(GRID_SIZE - 1, player.x + dx));
   const ny = Math.max(0, Math.min(GRID_SIZE - 1, player.y + dy));
   const ground = tile[ny * N + nx];
-  if (ground === 1) return;                    // a wall is in the way: stay put
+  const phasing = player === p1 && Date.now() < phaseUntil;   // Phase lets YOU walk through walls
+  if (ground === 1 && !phasing) return;        // a wall is in the way: stay put
   if (ground === 2 && player !== p1) return;   // the CPU won't walk into lava
+  arrive(player, nx, ny);
+}
 
+// Puts a dot on a square and applies whatever is there: lava, portals, crystals
+function arrive(player, nx, ny) {
   player.x = nx;
   player.y = ny;
+  const ground = tile[ny * N + nx];
 
   if (ground === 2) {                          // YOU stepped in lava!
     newRound("Burned in lava!");
@@ -915,12 +871,20 @@ let lastMoveAt = 0;
 function tryMove() {
   if (heldKeys.length === 0 || gameState !== "playing") return;
   const now = Date.now();
-  if (now - lastMoveAt < MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed) return;   // mud makes this longer, ice shorter   // too soon for another step
+  if (now - lastMoveAt < MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed * (now < boostUntil ? 0.5 : 1)) return;   // mud makes this longer, ice shorter   // too soon for another step
   lastMoveAt = now;
   const dir = moveKeys[heldKeys[heldKeys.length - 1]];   // the newest held key wins
   move(p1, dir[0], dir[1]);
 }
-setInterval(tryMove, 10);   // check for a step every 10 milliseconds
+// Runs every 10 milliseconds while the game is open
+function gameTick() {
+  tryMove();
+  if (phaseUntil !== 0 && Date.now() >= phaseUntil && gameState === "playing") {
+    phaseUntil = 0;       // Phase just ended
+    ejectFromWall();
+  }
+}
+setInterval(gameTick, 10);   // check for a step every 10 milliseconds
 
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
@@ -940,6 +904,9 @@ window.addEventListener("keydown", (e) => {
   if (key === "f") dash();                     // F: dash forward
   if (key === "q") dropDecoy();                // Q: drop a decoy
   if (key === "e") firePulse();                // E: slow pulse
+  if (key === "r") startPhase();                // R: phase through walls
+  if (key === "t") timeStop();                  // T: freeze the CPU
+  if (key === "shift") startBoost();            // Shift: overdrive
 });
 
 window.addEventListener("keyup", (e) => {
@@ -956,9 +923,11 @@ window.addEventListener("blur", () => { heldKeys = []; });
 // ---- DIFFICULTY ----
 // The longer you survive, the faster and sneakier the CPU gets.
 const START_DELAY = 250;   // CPU time between steps at the start of a round (ms)
-let MIN_DELAY = 55;        // the CPU never gets faster than this (set by the difficulty setting)
+let MIN_DELAY = 55;        // the "soft cap": the fast early ramp ends here (set by the difficulty setting)
 let SPEED_UP = 14;         // every second you survive, the delay shrinks by this many ms
-let MAX_LEAD = 6;          // the most squares ahead of you the CPU will aim
+let MAX_LEAD = 9;          // the most squares ahead of you the CPU will aim
+let FLOOR_DELAY = 24;      // the CPU's true top speed. After the soft cap it keeps creeping toward this
+const LATE_RAMP = 1;       // past the soft cap, the delay still shrinks by this many ms every second
 let roundStart = Date.now();   // when this round began
 let bestTime = 0;              // your longest survival so far, in seconds
 let roundActive = false;       // is a round in progress? (false while you're in the menu)
@@ -977,12 +946,33 @@ function secondsSurvived() {
   return (Date.now() - roundStart) / 1000;
 }
 
+// How long the CPU waits between steps, before any zone or slow effects
+function baseCpuDelay() {
+  const t = secondsSurvived();
+  let delay = START_DELAY - t * SPEED_UP;               // the fast early ramp
+  if (delay < MIN_DELAY) {                               // past the soft cap it keeps getting faster, just more slowly
+    const capReachedAt = (START_DELAY - MIN_DELAY) / SPEED_UP;
+    delay = MIN_DELAY - (t - capReachedAt) * LATE_RAMP;
+  }
+  return Math.max(FLOOR_DELAY, delay);
+}
+
+// The CPU adapts: slows get weaker the longer a round goes on (never below 1.8x)
+function slowFactor() {
+  return Math.max(1.8, SLOW_FACTOR - secondsSurvived() / 60);
+}
+
 // How long the CPU waits between steps right now
 function currentCpuDelay() {
-  let delay = Math.max(MIN_DELAY, START_DELAY - secondsSurvived() * SPEED_UP);
+  let delay = baseCpuDelay();
   delay *= BIOMES[biome[p2.y * N + p2.x]].speed;   // mud slows the CPU, ice speeds it up
-  if (Date.now() < slowedUntil) delay *= SLOW_FACTOR;   // slowed by a mine or pulse
+  if (Date.now() < slowedUntil) delay *= slowFactor();
   return delay;
+}
+
+// Shown in the HUD: goes up by one every 10 seconds
+function threatLevel() {
+  return 1 + Math.floor(secondsSurvived() / 10);
 }
 
 // How many squares ahead of you the CPU aims (grows by 1 every 3 seconds)
@@ -1015,6 +1005,12 @@ function newRound(reason) {
   dashReadyAt = 0;
   decoyReadyAt = 0;
   decoy = null;
+  frozenUntil = 0;
+  phaseUntil = 0;
+  phaseReadyAt = 0;
+  stopReadyAt = 0;
+  boostUntil = 0;
+  boostReadyAt = 0;
   p1.dirX = 0;  p1.dirY = 0;
   p1.x = START1.x;  p1.y = START1.y;
   p2.x = START2.x;  p2.y = START2.y;
@@ -1058,14 +1054,16 @@ function cpuStep() {
   for (let i = mines.length - 1; i >= 0; i--) {
     if (mines[i].x === p2.x && mines[i].y === p2.y) {
       mines.splice(i, 1);                       // remove the used mine
-      slowedUntil = Date.now() + SLOW_TIME;
+      freezeCpu(MINE_FREEZE);
+      slowCpu(SLOW_TIME);
     }
   }
 
   // If the CPU reaches the decoy, it falls for it and gets slowed
   if (decoy && decoy.x === p2.x && decoy.y === p2.y) {
     decoy = null;
-    slowedUntil = Date.now() + SLOW_TIME;
+    freezeCpu(DECOY_FREEZE);
+    slowCpu(SLOW_TIME);
   }
 
   // If the CPU lands on you, send both dots back to their starting sides
@@ -1076,8 +1074,9 @@ function cpuStep() {
 
 // Take a step, then wait. The wait is longer while the CPU is slowed.
 function cpuLoop() {
-  if (gameState === "playing") cpuStep();   // the CPU only moves during a game
-  setTimeout(cpuLoop, currentCpuDelay());
+  const frozen = Date.now() < frozenUntil;
+  if (gameState === "playing" && !frozen) cpuStep();   // the CPU only moves during a game, and not while frozen
+  setTimeout(cpuLoop, frozen ? 40 : currentCpuDelay());
 }
 cpuLoop();
 
@@ -1092,8 +1091,20 @@ function drawDot(cx, cy, color, radius) {
   ctx.stroke();
 }
 
+// What colour a dot should be right now
+function dotColor(p, now) {
+  if (p === p2) {
+    if (now < frozenUntil) return "#9fe8ff";   // frozen: icy
+    if (now < slowedUntil) return "#9b7bff";   // slowed: purple
+    return p.color;
+  }
+  if (now < phaseUntil) return "rgba(77, 163, 255, 0.4)";   // phasing: see-through
+  if (now < boostUntil) return "#8fd0ff";                   // overdrive: bright
+  return p.color;
+}
+
 function draw() {
-  if (gameState === "paused") shiftTimers();   // keeps every timer (and the HUD) frozen while paused
+  if (gameState === "paused" || gameState === "won") shiftTimers();   // keeps every timer (and the HUD) frozen while paused
   // Each frame, slide the shown position 20% of the way to the real one.
   // Bigger number = snappier, smaller number = floatier.
   const SMOOTHING = 0.2;
@@ -1112,8 +1123,8 @@ function draw() {
   let focusY = p1.drawY;
   if (gameState === "menu") {
     const drift = Date.now() / 1000;
-    focusX = N / 2 + Math.sin(drift * 0.03) * 70 + Math.sin(drift * 0.071) * 20 + menuParallax.x * 2.5;
-    focusY = N / 2 + Math.cos(drift * 0.025) * 70 + Math.cos(drift * 0.067) * 20 + menuParallax.y * 1.8;
+    focusX = N / 2 + Math.sin(drift * 0.03) * 70 + Math.sin(drift * 0.071) * 20;
+    focusY = N / 2 + Math.cos(drift * 0.025) * 70 + Math.cos(drift * 0.067) * 20;
   }
   const camX = focusX * CELL + CELL / 2 - canvas.width / 2;
   const camY = focusY * CELL + CELL / 2 - canvas.height / 2;
@@ -1322,7 +1333,7 @@ function draw() {
 
   // Draw both dots (hidden while the menu backdrop is showing)
   for (const p of (gameState === "menu" ? [] : [p1, p2])) {
-    drawDot(p.drawX * CELL + CELL / 2 - camX, p.drawY * CELL + CELL / 2 - camY, (p === p2 && now < slowedUntil) ? "#9b7bff" : p.color, CELL * 0.35);
+    drawDot(p.drawX * CELL + CELL / 2 - camX, p.drawY * CELL + CELL / 2 - camY, dotColor(p, now), CELL * 0.35);
   }
 
   // In the menu there's no HUD, just the backdrop
@@ -1331,37 +1342,32 @@ function draw() {
     return;
   }
 
-  // A dark panel behind the text so it's readable on any terrain
+  // ---- Info panel (top-left) ----
+  const nowMs = Date.now();
   ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-  ctx.fillRect(8, 8, 290, 278);
-
-  // Show your position in the top-left corner
+  ctx.fillRect(8, 8, 290, 214);
   ctx.fillStyle = "#fff";
   ctx.font = "16px monospace";
   ctx.fillText("You: " + p1.x + ", " + p1.y, 16, 28);
-
-  const pulseWait = Math.max(0, Math.ceil((pulseReadyAt - Date.now()) / 1000));
-  ctx.fillText("Mines [Space]: " + mineCount + "/" + MAX_MINES, 16, 52);
-  ctx.fillText("Pulse [E]: " + (pulseWait === 0 ? "READY" : pulseWait + "s"), 16, 76);
-  ctx.fillText("CPU: " + (Date.now() < slowedUntil ? "SLOWED" : "normal"), 16, 100);
-  ctx.fillText("CPU speed: " + (1000 / currentCpuDelay()).toFixed(1) + " steps/sec", 16, 124);
-  ctx.fillText("Survived: " + secondsSurvived().toFixed(1) + "s   Best: " + bestTime.toFixed(1) + "s", 16, 148);
-
-  const dashWait = Math.max(0, Math.ceil((dashReadyAt - Date.now()) / 1000));
-  const decoyWait = Math.max(0, Math.ceil((decoyReadyAt - Date.now()) / 1000));
-  ctx.fillText("Dash [F]: " + (dashWait === 0 ? "READY" : dashWait + "s"), 16, 172);
-  ctx.fillText("Decoy [Q]: " + (decoyWait === 0 ? "READY" : decoyWait + "s"), 16, 196);
+  ctx.fillText("Survived: " + secondsSurvived().toFixed(1) + "s   Best: " + bestTime.toFixed(1) + "s", 16, 52);
+  const threat = threatLevel();
+  ctx.fillStyle = threat >= 5 ? "#ff5c5c" : (threat >= 3 ? "#ffd23f" : "#fff");   // gets redder as it climbs
+  ctx.fillText("Threat: LV " + threat, 16, 76);
+  ctx.fillStyle = "#fff";
+  ctx.fillText("CPU: " + (nowMs < frozenUntil ? "FROZEN" : (nowMs < slowedUntil ? "SLOWED" : "normal")), 16, 100);
+  const cpuSteps = nowMs < frozenUntil ? 0 : 1000 / currentCpuDelay();
+  ctx.fillText("CPU speed: " + cpuSteps.toFixed(1) + " steps/sec", 16, 124);
   const here = BIOMES[biome[p1.y * N + p1.x]];
-  ctx.fillText("Zone: " + here.name, 16, 220);
-  ctx.fillText("Crystals: " + crystalsCollected, 16, 244);
+  ctx.fillText("Zone: " + here.name, 16, 148);
+  ctx.fillText("Crystals: " + crystalsCollected + " / " + NUM_BIG_CRYSTALS, 16, 172);
   if (here.note) {
     ctx.fillStyle = "#ffd23f";   // yellow so it stands out
-    ctx.fillText(here.note, 16, 268);
+    ctx.fillText(here.note, 16, 196);
     ctx.fillStyle = "#fff";
   }
 
-  // Big message near the top of the screen (caught, crystal, etc.)
-  if (Date.now() < bannerUntil) {
+  // ---- Big message near the top of the screen (caught, crystal, etc.) ----
+  if (nowMs < bannerUntil) {
     ctx.font = "bold 28px monospace";
     const bw = ctx.measureText(bannerText).width;
     ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
@@ -1370,14 +1376,81 @@ function draw() {
     ctx.fillText(bannerText, canvas.width / 2 - bw / 2, 78);
   }
 
-  // Controls reminder along the bottom
-  ctx.font = "14px monospace";
-  const help = "WASD move   Space mine   E pulse   F dash   Q decoy   Esc pause";
-  const hw = ctx.measureText(help).width;
-  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
-  ctx.fillRect(canvas.width / 2 - hw / 2 - 12, canvas.height - 40, hw + 24, 28);
-  ctx.fillStyle = "#ddd";
-  ctx.fillText(help, canvas.width / 2 - hw / 2, canvas.height - 21);
+  // ---- Arrows at the screen edge pointing to crystals you can't see ----
+  const aLeft = 50, aRight = canvas.width - 50, aTop = 50, aBottom = canvas.height - 135;   // (stays clear of the ability bar)
+  const aMidX = canvas.width / 2, aMidY = (aTop + aBottom) / 2;
+  for (const c of crystals) {
+    const sx = c.x * CELL + CELL / 2 - camX;
+    const sy = c.y * CELL + CELL / 2 - camY;
+    if (sx > aLeft && sx < aRight && sy > aTop && sy < aBottom) continue;   // already on screen
+    const ddx = sx - aMidX, ddy = sy - aMidY;
+    const kx = ddx > 0 ? (aRight - aMidX) / ddx : (ddx < 0 ? (aLeft - aMidX) / ddx : Infinity);
+    const ky = ddy > 0 ? (aBottom - aMidY) / ddy : (ddy < 0 ? (aTop - aMidY) / ddy : Infinity);
+    const k = Math.min(kx, ky);
+    let ax = aMidX + ddx * k, ay = aMidY + ddy * k;
+    if (settings.minimap && ax > canvas.width - 250 && ay < 240) ax = canvas.width - 250;   // slide away from the minimap
+    if (ax < 320 && ay < 235) ax = 320;                                                    // slide away from the info panel
+    const angle = Math.atan2(ddy, ddx);
+    ctx.save();
+    ctx.translate(ax, ay);
+    ctx.rotate(angle);
+    ctx.fillStyle = "#7dffea";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(-10, -12);
+    ctx.lineTo(-10, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#7dffea";
+    ctx.fillText(Math.round(Math.hypot(c.x - p1.x, c.y - p1.y)), ax - Math.cos(angle) * 32, ay - Math.sin(angle) * 32 + 4);
+    ctx.textAlign = "left";
+  }
+
+  // ---- Ability bar (bottom): one square per ability ----
+  const slots = [
+    { key: "SPC",   name: "MINE",  count: mineCount },
+    { key: "E",     name: "PULSE", readyAt: pulseReadyAt, cd: PULSE_COOLDOWN },
+    { key: "F",     name: "DASH",  readyAt: dashReadyAt,  cd: DASH_COOLDOWN },
+    { key: "Q",     name: "DECOY", readyAt: decoyReadyAt, cd: DECOY_COOLDOWN, active: decoy !== null && nowMs < decoy.until },
+    { key: "R",     name: "PHASE", readyAt: phaseReadyAt, cd: PHASE_COOLDOWN, active: nowMs < phaseUntil },
+    { key: "T",     name: "STOP",  readyAt: stopReadyAt,  cd: STOP_COOLDOWN,  active: stopReadyAt - nowMs > STOP_COOLDOWN - STOP_TIME },
+    { key: "SHIFT", name: "BOOST", readyAt: boostReadyAt, cd: BOOST_COOLDOWN, active: nowMs < boostUntil }
+  ];
+  const SLOT = 62, GAP = 8;
+  const barX = Math.round((canvas.width - (slots.length * SLOT + (slots.length - 1) * GAP)) / 2);
+  const barY = canvas.height - SLOT - 20;
+  slots.forEach((sl, i) => {
+    const x = barX + i * (SLOT + GAP);
+    const isMine = sl.count !== undefined;
+    const remaining = isMine ? 0 : Math.max(0, sl.readyAt - nowMs);
+    const ready = isMine ? sl.count > 0 : remaining === 0;
+    const cooling = isMine ? 0 : Math.min(1, remaining / sl.cd);   // 1 = just used, 0 = ready
+    ctx.fillStyle = ready ? "rgba(77, 163, 255, 0.22)" : "rgba(0, 0, 0, 0.65)";
+    ctx.fillRect(x, barY, SLOT, SLOT);
+    if (cooling > 0) {   // a grey fill that drains downward as the ability recharges
+      ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+      ctx.fillRect(x, barY + SLOT * (1 - cooling), SLOT, SLOT * cooling);
+    }
+    ctx.strokeStyle = sl.active ? "#ffd23f" : (ready ? "#4da3ff" : "rgba(255, 255, 255, 0.3)");
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, barY + 1, SLOT - 2, SLOT - 2);
+    ctx.fillStyle = ready ? "#fff" : "#8a8f9c";
+    ctx.font = "bold 12px monospace";
+    ctx.fillText(sl.key, x + 6, barY + 16);
+    ctx.font = "10px monospace";
+    ctx.fillText(sl.name, x + 6, barY + SLOT - 8);
+    ctx.font = "bold 22px monospace";
+    ctx.textAlign = "center";
+    if (isMine) ctx.fillText(sl.count, x + SLOT / 2, barY + SLOT / 2 + 8);
+    else if (remaining > 0) ctx.fillText(Math.ceil(remaining / 1000), x + SLOT / 2, barY + SLOT / 2 + 8);
+    ctx.textAlign = "left";
+  });
 
   if (settings.minimap) drawMinimap();
   requestAnimationFrame(draw);
@@ -1406,21 +1479,25 @@ function drawMinimap() {
 }
 
 // ================= SETTINGS AND RECORDS (saved on this computer) =================
-const settings = { difficulty: "Normal", sound: true, minimap: true, fx: true };
-const stats = { rounds: 0, crystals: 0, seconds: 0 };   // lifetime totals
+const settings = { difficulty: "Normal", sound: true, minimap: true };
+const stats = { rounds: 0, crystals: 0, seconds: 0, wins: 0, fastestWin: 0 };   // lifetime totals
 
-// How hard each difficulty is: how fast the CPU ramps up, its top speed,
-// and how far ahead of you it aims.
+// How hard each difficulty is:
+//  speedUp  - how fast the CPU ramps up at the start
+//  minDelay - where that fast ramp ends (the "soft cap")
+//  floor    - the CPU's true top speed, which it creeps toward after the soft cap
+//  lead     - how far ahead of you it aims
 const DIFFICULTIES = {
-  Easy:   { speedUp: 8,  minDelay: 90, lead: 4 },
-  Normal: { speedUp: 14, minDelay: 55, lead: 6 },
-  Hard:   { speedUp: 20, minDelay: 42, lead: 7 }
+  Easy:   { speedUp: 8,  minDelay: 90, floor: 60, lead: 5 },
+  Normal: { speedUp: 14, minDelay: 55, floor: 24, lead: 9 },
+  Hard:   { speedUp: 20, minDelay: 42, floor: 16, lead: 12 }
 };
 
 function applyDifficulty() {
   const d = DIFFICULTIES[settings.difficulty];
   SPEED_UP = d.speedUp;
   MIN_DELAY = d.minDelay;
+  FLOOR_DELAY = d.floor;
   MAX_LEAD = d.lead;
 }
 
@@ -1492,21 +1569,16 @@ const screens = {
   main: document.getElementById("screen-main"),
   howto: document.getElementById("screen-howto"),
   settings: document.getElementById("screen-settings"),
-  pause: document.getElementById("screen-pause")
+  pause: document.getElementById("screen-pause"),
+  victory: document.getElementById("screen-victory")
 };
 let currentScreen = "splash";
 let settingsReturn = "main";   // where the Settings "Back" button goes
-let hideTimer = null;
 let pausedAt = 0;
-let launching = false;
 let enteredAt = 0;             // when the intro screen was dismissed
 
 function fmt(seconds) {
   return seconds.toFixed(1) + "s";
-}
-function fmtDuration(seconds) {
-  const m = Math.floor(seconds / 60);
-  return m > 0 ? m + "m " + Math.floor(seconds % 60) + "s" : Math.floor(seconds) + "s";
 }
 function setText(id, text) {
   document.getElementById(id).textContent = text;
@@ -1515,72 +1587,98 @@ function setText(id, text) {
 // Refresh every number and switch shown in the menus
 function updateMenuLabels() {
   const now = roundActive ? secondsSurvived() : 0;
+  const fastest = stats.fastestWin > 0 ? fmt(stats.fastestWin) : "--";
   setText("c-best", fmt(bestTime));
   setText("c-runs", stats.rounds);
+  setText("c-wins", stats.wins);
+  setText("c-fast", fastest);
   setText("c-crystals", stats.crystals);
-  setText("c-time", fmtDuration(stats.seconds));
-  setText("c-diff", settings.difficulty);
   setText("st-time", fmt(now));
   setText("st-best", fmt(Math.max(bestTime, now)));
-  setText("st-crystals", crystalsCollected);
+  setText("st-crystals", crystalsCollected + "/" + NUM_BIG_CRYSTALS);
+  setText("v-wins", stats.wins);
+  setText("v-fast", fastest);
+  setText("v-crystals", stats.crystals);
   for (const b of ui.querySelectorAll('[data-action="difficulty"]')) {
     b.setAttribute("aria-pressed", String(b.dataset.value === settings.difficulty));
   }
   document.getElementById("sw-sound").setAttribute("aria-checked", String(settings.sound));
   document.getElementById("sw-minimap").setAttribute("aria-checked", String(settings.minimap));
-  document.getElementById("sw-fx").setAttribute("aria-checked", String(settings.fx));
-  ui.classList.toggle("fx-off", !settings.fx);
 }
 
-// A diagonal flash of light that sweeps across the screen
-function playSweep() {
-  ui.classList.remove("sweeping");
-  void ui.offsetWidth;   // restart the animation
-  ui.classList.add("sweeping");
-  swoosh();
-}
-
+// Shows a screen right away
 function showScreen(name) {
-  clearTimeout(hideTimer);
-  const wasHidden = ui.classList.contains("hidden");
-  const changed = name !== currentScreen;
-  ui.classList.remove("hidden", "fade-out", "launching");
-  ui.classList.toggle("paused", name === "pause" || (name === "settings" && settingsReturn === "pause"));
+  ui.classList.remove("hidden");
+  ui.classList.toggle("paused", name === "pause" || name === "victory" || (name === "settings" && settingsReturn === "pause"));
   ui.dataset.screen = name;
   currentScreen = name;
   for (const key in screens) screens[key].classList.toggle("active", key === name);
   updateMenuLabels();
   const target = screens[name].querySelector("[data-focus]") || screens[name].querySelector("button");
   if (target) target.focus();   // so the keyboard works straight away
-  if (changed || wasHidden) playSweep();
 }
 
 function hideMenus() {
-  ui.classList.add("fade-out");
-  hideTimer = setTimeout(() => {
-    ui.classList.add("hidden");
-    ui.classList.remove("fade-out", "launching");
-  }, 300);
+  ui.classList.add("hidden");
   if (document.activeElement) document.activeElement.blur();
+}
+
+// ================= SCREEN TRANSITION: A WAVE OF GRID SQUARES =================
+// A diagonal wave of 40px squares (the same size as the game's grid) sweeps over the
+// screen and then clears again. onCovered runs when the screen is fully covered.
+const wipe = document.getElementById("wipe");
+const wctx = wipe.getContext("2d");
+let wiping = false;
+
+function gridWipe(onCovered, coverMs, revealMs) {
+  if (wiping) { onCovered(); return; }
+  wiping = true;
+  swoosh();
+  const W = wipe.width = window.innerWidth;
+  const H = wipe.height = window.innerHeight;
+  const size = 40;
+  const cols = Math.ceil(W / size), rows = Math.ceil(H / size);
+  const maxOrder = cols + rows - 2;
+  const start = performance.now();
+
+  function frame() {
+    const t = performance.now() - start;
+    wctx.clearRect(0, 0, W, H);
+    const cover = Math.min(1, t / coverMs) * 1.2;                          // the wave that fills squares in
+    const reveal = t < coverMs ? -1 : ((t - coverMs) / revealMs) * 1.2;    // the wave that clears them again
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const order = (c + r) / maxOrder;                                  // 0 = top-left corner, 1 = bottom-right
+        if (order > cover || order <= reveal) continue;                    // not covered yet, or already cleared
+        const onCoverEdge = t < coverMs && cover - order < 0.07;
+        const onRevealEdge = t >= coverMs && order - reveal < 0.07;
+        wctx.fillStyle = onCoverEdge ? "#4da3ff" : (onRevealEdge ? "#ff5c5c" : "#05070d");
+        wctx.fillRect(c * size, r * size, size - 2, size - 2);
+      }
+    }
+    if (t < coverMs + revealMs) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(onCovered, coverMs);   // timers (not animation frames) decide when things happen, so it can't get stuck
+  setTimeout(() => { wiping = false; wctx.clearRect(0, 0, W, H); }, coverMs + revealMs + 30);
+}
+
+// Goes to another menu screen with a quick wipe
+function goScreen(name) {
+  gridWipe(() => showScreen(name), 150, 200);
 }
 
 // ================= GAME FLOW =================
 function enterMenu() {   // leaves the "press any key" screen
-  if (currentScreen !== "splash") return;
+  if (currentScreen !== "splash" || wiping) return;
   enteredAt = Date.now();
-  showScreen("main");
+  gridWipe(() => showScreen("main"), 260, 320);
 }
 
-// Pressing Play runs a short "entering the grid" sequence, then starts the game
+// Pressing Play: the grid wave covers the menu, the game starts underneath, and the wave clears
 function launchGame() {
-  if (launching) return;
-  launching = true;
-  ui.classList.add("launching");
-  swoosh();
-  setTimeout(() => {
-    launching = false;
-    startGame();
-  }, 1150);
+  if (wiping) return;
+  gridWipe(() => startGame(), 520, 420);
 }
 
 function startGame() {
@@ -1588,7 +1686,7 @@ function startGame() {
   newRound(null);
   gameState = "playing";
   hideMenus();
-  showBanner("Collect crystals, use portals, avoid lava!", 6000);
+  showBanner("Find all 4 crystals!   (Esc to pause)", 5000);
   beep(440, 0.1, "sine", 0.05);
   setTimeout(() => beep(660, 0.1, "sine", 0.05), 90);
   setTimeout(() => beep(880, 0.22, "sine", 0.05), 180);
@@ -1603,17 +1701,23 @@ function pauseGame() {
   showScreen("pause");
 }
 
-// Every timer in the game counts real clock time, so after a pause we push
-// them all forward by however long we were paused. Nothing "ran out" meanwhile.
+// Every timer in the game counts real clock time, so while paused (or on the victory screen)
+// we keep pushing them all forward. Nothing "ran out" meanwhile.
 function shiftTimers() {
   const gap = Date.now() - pausedAt;
   roundStart += gap;
   slowedUntil += gap;
+  frozenUntil += gap;
   pulseReadyAt += gap;
   dashReadyAt += gap;
   decoyReadyAt += gap;
+  phaseReadyAt += gap;
+  stopReadyAt += gap;
+  boostReadyAt += gap;
   pulseFlashUntil += gap;
   bannerUntil += gap;
+  if (phaseUntil) phaseUntil += gap;
+  if (boostUntil) boostUntil += gap;
   if (decoy) decoy.until += gap;
   pausedAt = Date.now();
 }
@@ -1626,58 +1730,82 @@ function resumeGame() {
 }
 
 function restartGame() {
-  if (gameState === "paused") shiftTimers();
+  if (gameState === "paused" || gameState === "won") shiftTimers();
   newRound(null);
   gameState = "playing";
   hideMenus();
-  showBanner("New round. Good luck!", 2000);
+  showBanner("New round. Find all 4 crystals!", 3000);
 }
 
 function quitToMenu() {
-  if (gameState === "paused") shiftTimers();
-  recordBest();
+  if (wiping) return;
+  gridWipe(() => {
+    if (gameState === "paused" || gameState === "won") shiftTimers();
+    recordBest();
+    roundActive = false;
+    gameState = "menu";
+    heldKeys = [];
+    settingsReturn = "main";
+    showScreen("main");
+  }, 260, 320);
+}
+
+// All four crystals collected!
+function winGame() {
+  const t = secondsSurvived();
+  recordBest();                        // this run counts as a round
   roundActive = false;
-  gameState = "menu";
+  stats.wins++;
+  const isRecord = stats.fastestWin === 0 || t < stats.fastestWin;
+  if (isRecord) stats.fastestWin = t;
+  saveSettings();
+  gameState = "won";
+  bannerUntil = 0;                     // clear any leftover message
+  pausedAt = Date.now();
   heldKeys = [];
-  settingsReturn = "main";
-  showScreen("main");
+  setText("v-time", fmt(t));
+  setText("v-note", isRecord ? "New fastest win!" : "Fastest win: " + fmt(stats.fastestWin));
+  beep(523, 0.15, "sine", 0.06);
+  setTimeout(() => beep(659, 0.15, "sine", 0.06), 150);
+  setTimeout(() => beep(784, 0.15, "sine", 0.06), 300);
+  setTimeout(() => beep(1047, 0.5, "sine", 0.06), 450);
+  showScreen("victory");
 }
 
 // Esc pauses, resumes, or goes back one screen
 function handleEscape() {
-  if (launching || currentScreen === "splash") return;
+  if (wiping || currentScreen === "splash" || gameState === "won") return;
   if (gameState === "playing") {
     pauseGame();
   } else if (gameState === "paused") {
     if (currentScreen === "pause") resumeGame();
     else showScreen("pause");
   } else if (currentScreen !== "main") {
-    showScreen(currentScreen === "settings" ? settingsReturn : "main");
+    goScreen(currentScreen === "settings" ? settingsReturn : "main");
   }
 }
 
 // ================= BUTTONS =================
 ui.addEventListener("click", (e) => {
   const el = e.target.closest("[data-action]");
-  if (!el || launching) return;
+  if (!el || wiping) return;
   const action = el.dataset.action;
   if (action !== "enter" && Date.now() - enteredAt < 350) return;   // ignore the click that dismissed the intro
   if (action !== "enter") beep(700, 0.06, "square", 0.02);
 
   if (action === "enter") enterMenu();
   else if (action === "play") launchGame();
-  else if (action === "howto") showScreen("howto");
-  else if (action === "settings") { settingsReturn = "main"; showScreen("settings"); }
-  else if (action === "back-main") showScreen("main");
-  else if (action === "settings-back") showScreen(settingsReturn);
+  else if (action === "howto") goScreen("howto");
+  else if (action === "settings") { settingsReturn = "main"; goScreen("settings"); }
+  else if (action === "back-main") goScreen("main");
+  else if (action === "settings-back") goScreen(settingsReturn);
   else if (action === "resume") resumeGame();
-  else if (action === "restart") restartGame();
+  else if (action === "restart" || action === "again") restartGame();
   else if (action === "pause-settings") { settingsReturn = "pause"; showScreen("settings"); }
   else if (action === "quit") quitToMenu();
   else if (action === "difficulty") { settings.difficulty = el.dataset.value; applyDifficulty(); saveSettings(); updateMenuLabels(); }
   else if (action === "toggle-sound") { settings.sound = !settings.sound; saveSettings(); updateMenuLabels(); }
   else if (action === "toggle-minimap") { settings.minimap = !settings.minimap; saveSettings(); updateMenuLabels(); }
-  else if (action === "toggle-fx") { settings.fx = !settings.fx; saveSettings(); updateMenuLabels(); }
 });
 
 // A soft tick when you move over a button
@@ -1691,7 +1819,7 @@ ui.addEventListener("mouseover", (e) => {
 // Keyboard: any key leaves the intro; arrow keys move between buttons.
 // Enter or Space presses the highlighted one.
 window.addEventListener("keydown", (e) => {
-  if (gameState === "playing" || launching) return;
+  if (gameState === "playing" || wiping) return;
   if (currentScreen === "splash") {
     const ignored = ["Shift", "Meta", "Control", "Alt", "CapsLock", "Tab", "Escape"];
     if (!ignored.includes(e.key)) {
@@ -1719,85 +1847,73 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("blur", () => { if (gameState === "playing") pauseGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && gameState === "playing") pauseGame(); });
 
-// ================= ATMOSPHERE: PARTICLES AND MOUSE PARALLAX =================
-const fx = document.getElementById("fx");
-const fctx = fx.getContext("2d");
-function sizeFx() {
-  fx.width = window.innerWidth;
-  fx.height = window.innerHeight;
-}
-sizeFx();
-window.addEventListener("resize", sizeFx);
+// ================= THE TITLE, MADE OF GRID TILES =================
+// Each letter is a 5 wide, 7 tall picture. "1" = a tile, "0" = empty.
+const PIXEL_FONT = {
+  G: ["01110", "10001", "10000", "10111", "10001", "10001", "01110"],
+  R: ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+  I: ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+  D: ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+  L: ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+  O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+  C: ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
+  K: ["10001", "10010", "10100", "11000", "10100", "10010", "10001"]
+};
+// The squares around the edge of the "O", in order. The two dots run around this loop.
+const O_RING = [[1, 0], [2, 0], [3, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [3, 6], [2, 6], [1, 6], [0, 5], [0, 4], [0, 3], [0, 2], [0, 1]];
+const chasers = [];   // the blue and red dots living inside each "O"
 
-// A soft glowing dot, drawn once per colour and reused (built from stacked circles)
-function makeGlow(color) {
-  const c = document.createElement("canvas");
-  c.width = c.height = 64;
-  const g = c.getContext("2d");
-  g.fillStyle = color;
-  for (let i = 0; i < 16; i++) {
-    g.globalAlpha = 0.07;
-    g.beginPath();
-    g.arc(32, 32, 30 - i * 1.8, 0, Math.PI * 2);
-    g.fill();
+function buildWordmark(el) {
+  el.textContent = "";
+  for (const letter of "GRIDLOCK") {
+    const glyph = document.createElement("div");
+    glyph.className = "glyph";
+    for (const row of PIXEL_FONT[letter]) {
+      for (const bit of row) {
+        const cell = document.createElement("i");
+        if (bit === "1") cell.className = "on";
+        glyph.appendChild(cell);
+      }
+    }
+    if (letter === "O") {
+      const blue = document.createElement("b");
+      const red = document.createElement("b");
+      blue.className = "dot blue";
+      red.className = "dot red";
+      glyph.appendChild(blue);
+      glyph.appendChild(red);
+      chasers.push({ blue: blue, red: red });
+    }
+    el.appendChild(glyph);
   }
-  return c;
-}
-const glows = [makeGlow("#7fb4ff"), makeGlow("#a58bff"), makeGlow("#ff7a7a")];
-const particles = [];
-for (let i = 0; i < 70; i++) {
-  particles.push({
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
-    depth: 0.3 + Math.random() * 0.7,          // far (small, slow) to near (big, fast)
-    glow: glows[Math.floor(Math.random() * glows.length)],
-    phase: Math.random() * Math.PI * 2
-  });
 }
 
-// Mouse position, from -1 to 1. Menus drift a little opposite to it, for depth.
-const parallaxTarget = { x: 0, y: 0 };
-window.addEventListener("mousemove", (e) => {
-  parallaxTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
-  parallaxTarget.y = (e.clientY / window.innerHeight) * 2 - 1;
-});
-const leftBlock = document.querySelector("#screen-main .left");
-let lastFx = 0;
-
-function fxLoop(time) {
-  requestAnimationFrame(fxLoop);
-  if (ui.classList.contains("hidden") || !settings.fx) return;
-  const dt = Math.min(0.05, (time - lastFx) / 1000 || 0.016);
-  lastFx = time;
-
-  menuParallax.x += (parallaxTarget.x - menuParallax.x) * 0.05;
-  menuParallax.y += (parallaxTarget.y - menuParallax.y) * 0.05;
-  leftBlock.style.transform = "translate(" + (-menuParallax.x * 7).toFixed(1) + "px, " + (-menuParallax.y * 5).toFixed(1) + "px)";
-
-  const W = fx.width, H = fx.height;
-  fctx.clearRect(0, 0, W, H);
-  fctx.globalCompositeOperation = "lighter";
-  for (const p of particles) {
-    p.y -= (10 + 34 * p.depth) * dt;                         // drift upward
-    p.x += Math.sin(time / 1600 + p.phase) * 8 * dt;         // sway sideways
-    if (p.y < -40) { p.y = H + 40; p.x = Math.random() * W; }
-    const size = 12 + 40 * p.depth;
-    fctx.globalAlpha = (0.35 + 0.35 * Math.sin(time / 900 + p.phase)) * p.depth;
-    fctx.drawImage(p.glow, p.x - menuParallax.x * 22 * p.depth - size / 2, p.y - menuParallax.y * 14 * p.depth - size / 2, size, size);
+// Every step, both dots move one square along the ring. Blue stays 3 squares behind red.
+let chaseStep = 0;
+function moveChasers() {
+  chaseStep++;
+  const redAt = O_RING[chaseStep % O_RING.length];
+  const blueAt = O_RING[(chaseStep + O_RING.length - 3) % O_RING.length];
+  for (const c of chasers) {
+    c.red.style.setProperty("--x", redAt[0]);
+    c.red.style.setProperty("--y", redAt[1]);
+    c.blue.style.setProperty("--x", blueAt[0]);
+    c.blue.style.setProperty("--y", blueAt[1]);
   }
-  fctx.globalAlpha = 1;
-  fctx.globalCompositeOperation = "source-over";
 }
 
 // ================= TIPS IN THE BOTTOM BAR =================
 const TIPS = [
-  "Crystals refill your tools and slow the CPU for 8 seconds.",
+  "Each big crystal refills every ability and freezes the CPU for 4 seconds.",
+  "Follow the cyan arrows at the edge of the screen to find the crystals.",
+  "Dash leaps over walls and lava. Use it to cut corners.",
+  "Phase lets you walk through walls for 3 seconds. Shortcuts everywhere.",
+  "Time stop freezes the CPU solid. Save it for a close call.",
   "Drop mines in the direction you're running. The CPU aims ahead of you.",
   "Portals work for the CPU too. Watch for it popping out behind you.",
   "Lava is deadly to you, but the CPU walks around it.",
-  "Lure the CPU into the swamp. Mud slows it as much as it slows you.",
-  "A decoy pulls the CPU away. If it reaches the decoy, it gets slowed.",
-  "Dash goes in a straight line, so make sure there's no lava ahead."
+  "The CPU keeps getting faster. Don't take too long.",
+  "Overdrive doubles your speed. Combine it with a dash."
 ];
 const tipEl = document.getElementById("tip");
 let tipIndex = Math.floor(Math.random() * TIPS.length);
@@ -1808,14 +1924,17 @@ setInterval(() => {
     tipIndex = (tipIndex + 1) % TIPS.length;
     tipEl.textContent = "Tip: " + TIPS[tipIndex];
     tipEl.classList.remove("fade");
-  }, 400);
+  }, 300);
 }, 6000);
 
 // ================= GO =================
 setText("worldId", Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, "0"));
+buildWordmark(document.getElementById("wm-splash"));
+buildWordmark(document.getElementById("wm-main"));
+moveChasers();
+setInterval(moveChasers, 260);
 loadSettings();
 showScreen("splash");
-requestAnimationFrame(fxLoop);
 draw();
 </script>
 </body>
