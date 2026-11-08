@@ -132,7 +132,7 @@
   .ph { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
   .panel.center .ph { justify-content: center; }
   .ph h2 { margin: 0; font-size: 20px; letter-spacing: 0.22em; text-transform: uppercase; }
-  .panel h3 { margin: 24px 0 4px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--blue); }
+  .panel h3 { margin: 18px 0 4px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--blue); }
   .lead { margin: 16px 0 0; font-size: 14px; line-height: 1.7; color: #d0d6e6; text-align: left; }
   .lead b { color: #fff; }
   .cy { color: var(--cyan); font-weight: 700; }
@@ -149,7 +149,7 @@
   .gem { display: block; width: 16px; height: 24px; background: var(--cyan); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
   .btn { width: auto; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; }
-  .btn.small { display: inline-flex; margin-top: 24px; padding: 12px 22px; }
+  .btn.small { display: inline-flex; margin-top: 18px; padding: 12px 22px; }
   .menu { display: flex; flex-direction: column; gap: 8px; width: 100%; }
   .menu .btn { width: 100%; }
 
@@ -175,7 +175,23 @@
   .vnote { margin: 4px 0 0; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--yellow); }
 
   /* ---- Screen transition: a wave of 40px grid squares ---- */
-  #wipe { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
+  #wipe { display: none; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
+  #wipe.on { display: block; }
+
+  /* ---- How to play: the abilities grid ---- */
+  .panel.wide { width: min(1000px, 94vw); }
+  .movekeys { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-size: 13px; color: #d0d6e6; text-align: left; }
+  .movekeys .keys { min-width: 0; }
+  .gapx { width: 22px; }
+  .abilities { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; }
+  .abilities li { display: flex; align-items: center; gap: 12px; padding: 5px 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); text-align: left; }
+  .abilities b { color: #fff; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .abilities small { display: block; margin-top: 2px; color: var(--dim); font-size: 11.5px; }
+  .abilities kbd { flex: none; }
+  .aicon { flex: none; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+  .aicon canvas { display: block; }
+  .list.two { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
+  @media (max-width: 800px) { .abilities, .list.two { grid-template-columns: 1fr; } }
 
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -241,35 +257,24 @@
 
   <!-- ============ HOW TO PLAY ============ -->
   <section class="screen" id="screen-howto">
-    <div class="panel">
+    <div class="panel wide">
       <div class="ph"><i class="sq"></i><h2>How to play</h2></div>
       <p class="lead"><b>Objective:</b> collect all <span class="cy">4 big crystals</span> before the CPU catches you. Each one is a huge power surge. The red CPU never stops hunting you, and the longer a round goes, the faster and smarter it gets. Follow the arrows at the edge of the screen to find the crystals.</p>
-      <div class="cols">
-        <div>
-          <h3>Controls</h3>
-          <ul class="list">
-            <li><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move</span></li>
-            <li><span class="keys"><kbd class="wide">Space</kbd></span><span><b>Mine.</b> Freezes the CPU when it steps on it</span></li>
-            <li><span class="keys"><kbd>E</kbd></span><span><b>Pulse.</b> Freezes and slows the CPU nearby</span></li>
-            <li><span class="keys"><kbd>F</kbd></span><span><b>Dash.</b> Leap 8 squares over walls and lava</span></li>
-            <li><span class="keys"><kbd>Q</kbd></span><span><b>Decoy.</b> A fake you that traps the CPU</span></li>
-            <li><span class="keys"><kbd>R</kbd></span><span><b>Phase.</b> Walk through walls for 3 seconds</span></li>
-            <li><span class="keys"><kbd>T</kbd></span><span><b>Time stop.</b> Freeze the CPU for 3 seconds</span></li>
-            <li><span class="keys"><kbd class="wide">Shift</kbd></span><span><b>Overdrive.</b> Move twice as fast for 4 seconds</span></li>
-            <li><span class="keys"><kbd class="wide">Esc</kbd></span><span>Pause</span></li>
-          </ul>
-        </div>
-        <div>
-          <h3>The world</h3>
-          <ul class="list">
-            <li><span class="icon"><i class="gem"></i></span><span><b>Big crystals.</b> Refill every ability and freeze the CPU. Get all 4 to win</span></li>
-            <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in glowing pairs. The CPU uses them too</span></li>
-            <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you back to the start. The CPU avoids it</span></li>
-            <li><span class="icon"><i class="dot" style="--c:#6a7d3f"></i></span><span><b>Mud</b> slows everyone down</span></li>
-            <li><span class="icon"><i class="dot" style="--c:#dfe9ef"></i></span><span><b>Ice</b> speeds everyone up</span></li>
-          </ul>
-        </div>
+      <div class="movekeys">
+        <span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move</span>
+        <span class="gapx"></span>
+        <kbd class="wide">Esc</kbd><span>Pause</span>
       </div>
+      <h3>Abilities</h3>
+      <ul class="abilities" id="ability-list"></ul>
+      <h3>The world</h3>
+      <ul class="list two">
+        <li><span class="icon"><i class="gem"></i></span><span><b>Big crystals.</b> Refill every ability and freeze the CPU. Get all 4 to win</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in glowing pairs. The CPU uses them too</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you back to the start. The CPU avoids it</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#6a7d3f"></i></span><span><b>Mud</b> slows everyone down</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#dfe9ef"></i></span><span><b>Ice</b> speeds everyone up</span></li>
+      </ul>
       <button class="btn small" data-action="back-main" data-focus><span class="cur"></span>Back</button>
     </div>
   </section>
@@ -355,6 +360,10 @@ const p2 = { x: GRID_SIZE - 4,    y: GRID_SIZE / 2, color: "#ff5c5c" };
 for (const p of [p1, p2]) {
   p.drawX = p.x;
   p.drawY = p.y;
+  p.fromX = p.x;       // the square a dot is sliding FROM
+  p.fromY = p.y;
+  p.glideStart = 0;    // when the slide began
+  p.glideDur = 0;      // how long it lasts (0 = not sliding)
 }
 
 // Remember which way each dot last moved (the CPU uses this to aim ahead of you)
@@ -524,6 +533,12 @@ for (let i = 0; i < N * N; i++) {
   if (tile[i] === 0) openCells.push(i);
 }
 
+// Every lava square. (The red-orange base is part of the cached ground; only the glow animates.)
+const lavaCells = [];
+for (let i = 0; i < N * N; i++) {
+  if (tile[i] === 2) lavaCells.push({ x: i % N, y: (i / N) | 0, idx: i });
+}
+
 // Step 4: portals come in pairs. Step on one, pop out of the other.
 const portalCells = [];
 function farFromStarts(idx) {
@@ -599,6 +614,11 @@ function collectCrystals() {
       phaseReadyAt = 0;
       stopReadyAt = 0;
       boostReadyAt = 0;
+      rewindReadyAt = 0;
+      cageReadyAt = 0;
+      knockReadyAt = 0;
+      warpReadyAt = 0;
+      shieldReadyAt = 0;
       freezeCpu(4000);
       slowCpu(12000);
       if (crystalsCollected >= NUM_BIG_CRYSTALS) {
@@ -699,7 +719,7 @@ function firePulse() {
   const now = Date.now();
   if (now < pulseReadyAt) return;          // still recharging
   pulseReadyAt = now + PULSE_COOLDOWN;
-  pulseFlashUntil = now + 300;
+  addRing(p1.x, p1.y, "120, 200, 255", PULSE_RANGE, 300);
   beep(420, 0.25, "sine", 0.05);
   const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   if (distance <= PULSE_RANGE) {
@@ -802,6 +822,161 @@ function startBoost() {
   beep(500, 0.25, "square", 0.025);
 }
 
+// ---- EFFECT RINGS ----
+// Expanding circles drawn on the ground for pulse, knockback, warp and rewind.
+const fxRings = [];
+function addRing(x, y, rgb, rangeInSquares, ms) {
+  fxRings.push({ x: x, y: y, color: rgb, range: rangeInSquares, until: Date.now() + ms, dur: ms });
+}
+
+// Z: Rewind. Jump back to where you were about 4 seconds ago.
+const REWIND_BACK = 4000;
+const REWIND_COOLDOWN = 18000;
+let rewindReadyAt = 0;
+const posHistory = [];        // where you've been, noted every 0.1 seconds: {x, y, t}
+let lastHistoryAt = 0;
+
+function rewind() {
+  const now = Date.now();
+  if (now < rewindReadyAt) return;
+  let spot = null;
+  for (let i = posHistory.length - 1; i >= 0; i--) {          // find the note from ~4 seconds ago
+    if (posHistory[i].t <= now - REWIND_BACK) { spot = posHistory[i]; break; }
+  }
+  if (!spot && posHistory.length > 0 && now - posHistory[0].t > 1500) spot = posHistory[0];   // early in a round: use the oldest
+  if (!spot || (spot.x === p1.x && spot.y === p1.y)) return;   // nowhere useful to go back to
+  rewindReadyAt = now + REWIND_COOLDOWN;
+  addRing(p1.x, p1.y, "197, 139, 255", 4, 400);               // a flash where you were...
+  p1.x = spot.x;
+  p1.y = spot.y;
+  snapTo(p1);
+  addRing(p1.x, p1.y, "197, 139, 255", 4, 400);               // ...and where you land
+  posHistory.length = 0;
+  beep(700, 0.1, "triangle", 0.05);
+  setTimeout(() => beep(350, 0.2, "triangle", 0.05), 90);
+  collectCrystals();
+}
+
+// X: Cage. Wall the CPU in for 5 seconds.
+const CAGE_RANGE = 14;
+const CAGE_TIME = 5000;
+const CAGE_COOLDOWN = 16000;
+let cageReadyAt = 0;
+const barriers = [];          // the temporary cage walls: {idx, until}
+
+function castCage() {
+  const now = Date.now();
+  if (now < cageReadyAt) return;
+  const dist = Math.max(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
+  if (dist > CAGE_RANGE) { showBanner("The CPU is too far away to cage", 1200); return; }
+  if (dist < 3) { showBanner("Too close to cage it. Back off first!", 1400); return; }
+  let placed = 0;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== 2) continue;      // only the ring of squares around the CPU
+      const x = p2.x + dx, y = p2.y + dy;
+      if (x < 0 || y < 0 || x >= N || y >= N) continue;
+      const idx = y * N + x;
+      if (tile[idx] !== 0 || portalTo[idx] >= 0) continue;           // already a wall, lava or a portal
+      if (x === p1.x && y === p1.y) continue;
+      if (crystals.some(c => c.x === x && c.y === y)) continue;
+      tile[idx] = 3;
+      barriers.push({ idx: idx, until: now + CAGE_TIME });
+      placed++;
+    }
+  }
+  if (placed === 0) return;
+  cageReadyAt = now + CAGE_COOLDOWN;
+  terrainCache.dirty = true;                                          // the ground changed, so redraw it
+  freezeCpu(400);
+  addRing(p2.x, p2.y, "125, 255, 234", 3, 400);
+  beep(180, 0.3, "square", 0.04);
+}
+
+// C: Knockback. Hurl the CPU 10 squares away from you, then freeze it for a second.
+const KNOCK_RANGE = 20;
+const KNOCK_DIST = 10;
+const KNOCK_FREEZE = 1000;
+const KNOCK_COOLDOWN = 9000;
+let knockReadyAt = 0;
+
+// Pushes the CPU away from you, one square at a time, always to the open square that's farthest from you
+function knockbackCpu(steps) {
+  startGlide(p2, 160);
+  for (let i = 0; i < steps; i++) {
+    let best = null;
+    let bestDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    for (const dir of DIRS) {
+      const x = p2.x + dir[0], y = p2.y + dir[1];
+      if (x < 0 || y < 0 || x >= N || y >= N) continue;
+      const idx = y * N + x;
+      if (tile[idx] !== 0 || portalTo[idx] >= 0) continue;
+      const d = Math.hypot(x - p1.x, y - p1.y);
+      if (d > bestDist) { bestDist = d; best = [x, y]; }
+    }
+    if (!best) break;
+    p2.x = best[0];
+    p2.y = best[1];
+  }
+}
+
+function knockback() {
+  const now = Date.now();
+  if (now < knockReadyAt) return;
+  if (Math.hypot(p2.x - p1.x, p2.y - p1.y) > KNOCK_RANGE) return;   // nothing close enough to push
+  knockReadyAt = now + KNOCK_COOLDOWN;
+  addRing(p1.x, p1.y, "255, 122, 122", 8, 350);
+  knockbackCpu(KNOCK_DIST);
+  freezeCpu(KNOCK_FREEZE);
+  beep(150, 0.25, "sawtooth", 0.05);
+}
+
+// V: Warp. Teleport to a random safe spot 30 to 70 squares away, never near the CPU.
+const WARP_MIN = 30;
+const WARP_MAX = 70;
+const WARP_COOLDOWN = 25000;
+let warpReadyAt = 0;
+
+function warp() {
+  const now = Date.now();
+  if (now < warpReadyAt) return;
+  let spot = null;
+  for (let tries = 0; tries < 400 && !spot; tries++) {
+    const idx = openCells[rand(openCells.length)];
+    const x = idx % N, y = (idx / N) | 0;
+    const d = Math.hypot(x - p1.x, y - p1.y);
+    if (d < WARP_MIN || d > WARP_MAX) continue;
+    if (Math.hypot(x - p2.x, y - p2.y) < 40) continue;              // never land next to the CPU
+    if (tile[idx] !== 0 || portalTo[idx] >= 0) continue;
+    spot = { x: x, y: y };
+  }
+  if (!spot) return;
+  warpReadyAt = now + WARP_COOLDOWN;
+  addRing(p1.x, p1.y, "255, 77, 166", 4, 450);
+  p1.x = spot.x;
+  p1.y = spot.y;
+  snapTo(p1);
+  addRing(p1.x, p1.y, "255, 77, 166", 4, 450);
+  beep(900, 0.1, "sine", 0.05);
+  setTimeout(() => beep(450, 0.25, "sine", 0.05), 80);
+  collectCrystals();
+}
+
+// G: Shield. For 6 seconds the next time the CPU catches you is blocked:
+// the CPU is flung back and frozen for 2 seconds instead.
+const SHIELD_TIME = 6000;
+const SHIELD_COOLDOWN = 20000;
+let shieldUntil = 0;
+let shieldReadyAt = 0;
+
+function raiseShield() {
+  const now = Date.now();
+  if (now < shieldReadyAt) return;
+  shieldReadyAt = now + SHIELD_COOLDOWN;
+  shieldUntil = now + SHIELD_TIME;
+  beep(520, 0.2, "sine", 0.05);
+}
+
 // ---- SETUP THE DRAWING AREA ----
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
@@ -822,13 +997,15 @@ function move(player, dx, dy) {
   const ny = Math.max(0, Math.min(GRID_SIZE - 1, player.y + dy));
   const ground = tile[ny * N + nx];
   const phasing = player === p1 && Date.now() < phaseUntil;   // Phase lets YOU walk through walls
-  if (ground === 1 && !phasing) return;        // a wall is in the way: stay put
+  if ((ground === 1 || ground === 3) && !phasing) return;        // a wall is in the way: stay put
   if (ground === 2 && player !== p1) return;   // the CPU won't walk into lava
   arrive(player, nx, ny);
 }
 
 // Puts a dot on a square and applies whatever is there: lava, portals, crystals
 function arrive(player, nx, ny) {
+  // Slide from the square we were on to the new one, taking exactly one step's time
+  startGlide(player, Math.min(400, player === p1 ? playerStepMs() : currentCpuDelay()));
   player.x = nx;
   player.y = ny;
   const ground = tile[ny * N + nx];
@@ -843,8 +1020,7 @@ function arrive(player, nx, ny) {
   if (exit >= 0) {
     player.x = exit % N;
     player.y = (exit / N) | 0;
-    player.drawX = player.x;
-    player.drawY = player.y;
+    snapTo(player);
     if (player === p1) {   // a little rising "whoosh" when YOU use a portal
       beep(240, 0.18, "triangle", 0.05);
       setTimeout(() => beep(480, 0.2, "triangle", 0.05), 80);
@@ -879,6 +1055,21 @@ function tryMove() {
 // Runs every 10 milliseconds while the game is open
 function gameTick() {
   tryMove();
+  if (gameState === "playing") {
+    const now = Date.now();
+    if (now - lastHistoryAt >= 100) {            // note where you are every 0.1s (for Rewind)
+      lastHistoryAt = now;
+      posHistory.push({ x: p1.x, y: p1.y, t: now });
+      while (posHistory.length > 0 && posHistory[0].t < now - 8000) posHistory.shift();
+    }
+    for (let i = barriers.length - 1; i >= 0; i--) {   // cage walls disappear when their time is up
+      if (now >= barriers[i].until) {
+        if (tile[barriers[i].idx] === 3) tile[barriers[i].idx] = 0;
+        barriers.splice(i, 1);
+        terrainCache.dirty = true;
+      }
+    }
+  }
   if (phaseUntil !== 0 && Date.now() >= phaseUntil && gameState === "playing") {
     phaseUntil = 0;       // Phase just ended
     ejectFromWall();
@@ -907,6 +1098,11 @@ window.addEventListener("keydown", (e) => {
   if (key === "r") startPhase();                // R: phase through walls
   if (key === "t") timeStop();                  // T: freeze the CPU
   if (key === "shift") startBoost();            // Shift: overdrive
+  if (key === "z") rewind();                    // Z: jump back in time
+  if (key === "x") castCage();                  // X: cage the CPU
+  if (key === "c") knockback();                 // C: hurl the CPU away
+  if (key === "v") warp();                      // V: teleport
+  if (key === "g") raiseShield();               // G: shield
 });
 
 window.addEventListener("keyup", (e) => {
@@ -1011,13 +1207,21 @@ function newRound(reason) {
   stopReadyAt = 0;
   boostUntil = 0;
   boostReadyAt = 0;
+  rewindReadyAt = 0;
+  cageReadyAt = 0;
+  knockReadyAt = 0;
+  warpReadyAt = 0;
+  shieldReadyAt = 0;
+  shieldUntil = 0;
+  for (const b of barriers) { if (tile[b.idx] === 3) tile[b.idx] = 0; }   // cage walls vanish
+  barriers.length = 0;
+  terrainCache.dirty = true;
+  fxRings.length = 0;
+  posHistory.length = 0;
   p1.dirX = 0;  p1.dirY = 0;
   p1.x = START1.x;  p1.y = START1.y;
   p2.x = START2.x;  p2.y = START2.y;
-  for (const p of [p1, p2]) {
-    p.drawX = p.x;
-    p.drawY = p.y;
-  }
+  for (const p of [p1, p2]) snapTo(p);
 }
 
 function cpuStep() {
@@ -1068,7 +1272,16 @@ function cpuStep() {
 
   // If the CPU lands on you, send both dots back to their starting sides
   if (p1.x === p2.x && p1.y === p2.y) {
-    newRound("Caught!");
+    if (Date.now() < shieldUntil) {              // the shield takes the hit
+      shieldUntil = 0;
+      freezeCpu(2000);
+      knockbackCpu(8);
+      addRing(p1.x, p1.y, "140, 200, 255", 6, 400);
+      showBanner("Shield blocked the CPU!", 1800);
+      beep(300, 0.3, "triangle", 0.06);
+    } else {
+      newRound("Caught!");
+    }
   }
 }
 
@@ -1091,6 +1304,346 @@ function drawDot(cx, cy, color, radius) {
   ctx.stroke();
 }
 
+// ---- SLIDING DOTS ----
+// How long a dot takes to slide to the next square: one whole step.
+function playerStepMs() {
+  const now = Date.now();
+  return Math.max(30, MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed * (now < boostUntil ? 0.5 : 1));
+}
+function startGlide(p, ms) {   // begin sliding from wherever the dot is drawn right now
+  p.fromX = p.drawX;
+  p.fromY = p.drawY;
+  p.glideStart = performance.now();
+  p.glideDur = ms;
+}
+function snapTo(p) {           // jump instantly (portals, new rounds, teleports)
+  p.drawX = p.x;
+  p.drawY = p.y;
+  p.fromX = p.x;
+  p.fromY = p.y;
+  p.glideDur = 0;
+}
+
+// ---- TERRAIN CACHE ----
+// The ground (floor, walls, lava base, grid lines, coordinates) doesn't change while you play.
+// So instead of redrawing ~800 squares 60 times a second, we draw it ONCE onto a spare canvas
+// that's a little bigger than the screen, and then just copy that. It's redrawn only when the
+// camera has moved a few squares, or when temporary walls appear or disappear.
+const CACHE_MARGIN = 4;   // extra squares kept around the screen
+const terrainCache = { canvas: document.createElement("canvas"), col0: 0, row0: 0, cols: 0, rows: 0, dirty: true };
+terrainCache.g = terrainCache.canvas.getContext("2d");
+
+function renderTerrainCache(col0, row0, cols, rows) {
+  const c = terrainCache, g = c.g;
+  c.col0 = col0; c.row0 = row0; c.cols = cols; c.rows = rows; c.dirty = false;
+  if (c.canvas.width !== cols * CELL) c.canvas.width = cols * CELL;
+  if (c.canvas.height !== rows * CELL) c.canvas.height = rows * CELL;
+  g.clearRect(0, 0, c.canvas.width, c.canvas.height);
+
+  const colA = Math.max(0, col0), colB = Math.min(N, col0 + cols);   // only squares that exist
+  const rowA = Math.max(0, row0), rowB = Math.min(N, row0 + rows);
+
+  for (let row = rowA; row < rowB; row++) {
+    for (let col = colA; col < colB; col++) {
+      const idx = row * N + col;
+      const zone = BIOMES[biome[idx]];
+      const sx = (col - col0) * CELL;
+      const sy = (row - row0) * CELL;
+      g.fillStyle = zone.floor[shade[idx]];
+      g.fillRect(sx, sy, CELL, CELL);
+      const t = tile[idx];
+      if (t === 0 && shade[idx] === 0 && zone.speed !== 1) {      // little details so you can SEE the terrain effects
+        if (zone.speed > 1) {   // mud: a dark puddle
+          g.fillStyle = "rgba(0, 0, 0, 0.3)";
+          g.beginPath();
+          g.ellipse(sx + CELL / 2, sy + CELL / 2, CELL * 0.3, CELL * 0.18, 0, 0, Math.PI * 2);
+          g.fill();
+        } else {                // ice: a white glint
+          g.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          g.lineWidth = 2;
+          g.beginPath();
+          g.moveTo(sx + 10, sy + CELL - 12);
+          g.lineTo(sx + CELL - 14, sy + 12);
+          g.stroke();
+        }
+      } else if (t === 1) {     // a rock or tree: looks like a raised block
+        g.fillStyle = zone.wall;
+        g.fillRect(sx, sy, CELL, CELL);
+        g.fillStyle = zone.top;
+        g.fillRect(sx + 4, sy + 4, CELL - 8, CELL - 10);
+      } else if (t === 2) {     // lava (its glow is added every frame)
+        g.fillStyle = "#b53210";
+        g.fillRect(sx, sy, CELL, CELL);
+      } else if (t === 3) {     // a cage wall from the Cage ability
+        g.fillStyle = "#1f6f86";
+        g.fillRect(sx, sy, CELL, CELL);
+        g.fillStyle = "#7dffea";
+        g.fillRect(sx + 4, sy + 4, CELL - 8, CELL - 10);
+      }
+    }
+  }
+
+  // faint grid lines on top of the ground
+  g.strokeStyle = "rgba(0, 0, 0, 0.2)";
+  g.lineWidth = 1;
+  g.beginPath();
+  for (let col = colA; col <= colB; col++) {
+    const sx = (col - col0) * CELL;
+    g.moveTo(sx, (rowA - row0) * CELL);
+    g.lineTo(sx, (rowB - row0) * CELL);
+  }
+  for (let row = rowA; row <= rowB; row++) {
+    const sy = (row - row0) * CELL;
+    g.moveTo((colA - col0) * CELL, sy);
+    g.lineTo((colB - col0) * CELL, sy);
+  }
+  g.stroke();
+
+  // bold lines every 10 squares
+  g.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  g.lineWidth = 2;
+  g.beginPath();
+  for (let col = colA; col <= colB; col++) {
+    if (col % 10 !== 0) continue;
+    const sx = (col - col0) * CELL;
+    g.moveTo(sx, (rowA - row0) * CELL);
+    g.lineTo(sx, (rowB - row0) * CELL);
+  }
+  for (let row = rowA; row <= rowB; row++) {
+    if (row % 10 !== 0) continue;
+    const sy = (row - row0) * CELL;
+    g.moveTo((colA - col0) * CELL, sy);
+    g.lineTo((colB - col0) * CELL, sy);
+  }
+  g.stroke();
+
+  // coordinate labels where the bold lines cross, like "50,100"
+  g.fillStyle = "rgba(255, 255, 255, 0.55)";
+  g.font = "12px monospace";
+  for (let col = colA; col <= colB; col++) {
+    if (col % 10 !== 0) continue;
+    for (let row = rowA; row <= rowB; row++) {
+      if (row % 10 === 0) g.fillText(col + "," + row, (col - col0) * CELL + 4, (row - row0) * CELL + 14);
+    }
+  }
+}
+
+// The info panel only changes a few times a second, so it's drawn into its own little canvas
+// and only redrawn when its text actually changes.
+const hudCache = { canvas: document.createElement("canvas"), key: "" };
+hudCache.canvas.width = 290;
+hudCache.canvas.height = 214;
+hudCache.g = hudCache.canvas.getContext("2d");
+
+// ---- ABILITY SYMBOLS ----
+// Pixel-art symbols, 9 squares wide and 9 tall. "#" = a lit square.
+const ABILITY_ICONS = {
+  mine: [
+    "....#....",
+    "..#####..",
+    ".#######.",
+    ".#######.",
+    "#########",
+    ".#######.",
+    ".#######.",
+    "..#####..",
+    "....#...."
+  ],
+  pulse: [
+    "..#####..",
+    ".#.....#.",
+    "#.......#",
+    "#...#...#",
+    "#..###..#",
+    "#...#...#",
+    "#.......#",
+    ".#.....#.",
+    "..#####.."
+  ],
+  dash: [
+    ".........",
+    "....#....",
+    ".....#...",
+    "......#..",
+    "#########",
+    "......#..",
+    ".....#...",
+    "....#....",
+    "........."
+  ],
+  decoy: [
+    ".........",
+    ".........",
+    ".###.###.",
+    "#####...#",
+    "#####...#",
+    "#####...#",
+    ".###.###.",
+    ".........",
+    "........."
+  ],
+  phase: [
+    "..#####..",
+    ".#######.",
+    "#########",
+    "##.###.##",
+    "##.###.##",
+    "#########",
+    "#########",
+    "#########",
+    "#.##.##.#"
+  ],
+  stop: [
+    "#########",
+    ".#######.",
+    "..#####..",
+    "...###...",
+    "....#....",
+    "...###...",
+    "..#####..",
+    ".#######.",
+    "#########"
+  ],
+  boost: [
+    ".....##..",
+    "....##...",
+    "...##....",
+    "..#####..",
+    "....##...",
+    "...##....",
+    "..##.....",
+    ".##......",
+    ".#......."
+  ],
+  rewind: [
+    ".........",
+    "...#...#.",
+    "..##..##.",
+    ".###.###.",
+    "####.####",
+    ".###.###.",
+    "..##..##.",
+    "...#...#.",
+    "........."
+  ],
+  cage: [
+    "#########",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#########"
+  ],
+  knock: [
+    "#...#...#",
+    ".#..#..#.",
+    "..#.#.#..",
+    "...#.#...",
+    "####.####",
+    "...#.#...",
+    "..#.#.#..",
+    ".#..#..#.",
+    "#...#...#"
+  ],
+  warp: [
+    "....#....",
+    "...#.#...",
+    "..#...#..",
+    ".#..#..#.",
+    "#..###..#",
+    ".#..#..#.",
+    "..#...#..",
+    "...#.#...",
+    "....#...."
+  ],
+  shield: [
+    "#########",
+    "#.......#",
+    "#...#...#",
+    "#..###..#",
+    "#...#...#",
+    "#.......#",
+    ".#.....#.",
+    "..#...#..",
+    "...###..."
+  ]
+};
+
+// Everything about each ability's look, in the order they appear on the bar
+const ABILITIES = [
+  { id: "mine",   key: "SPC",   label: "MINE",   title: "Mine",      color: "#ffd23f", desc: "Freezes the CPU when it steps on it" },
+  { id: "pulse",  key: "E",     label: "PULSE",  title: "Pulse",     color: "#4da3ff", desc: "Freezes and slows the CPU nearby" },
+  { id: "dash",   key: "F",     label: "DASH",   title: "Dash",      color: "#ffffff", desc: "Leap 8 squares over walls and lava" },
+  { id: "decoy",  key: "Q",     label: "DECOY",  title: "Decoy",     color: "#66ff99", desc: "A fake you that traps the CPU" },
+  { id: "phase",  key: "R",     label: "PHASE",  title: "Phase",     color: "#a9a9ff", desc: "Walk through walls for 3 seconds" },
+  { id: "stop",   key: "T",     label: "STOP",   title: "Time stop", color: "#9fe8ff", desc: "Freeze the CPU for 3 seconds" },
+  { id: "boost",  key: "SHIFT", label: "BOOST",  title: "Overdrive", color: "#ff9f43", desc: "Move twice as fast for 4 seconds" },
+  { id: "rewind", key: "Z",     label: "REWIND", title: "Rewind",    color: "#c58bff", desc: "Jump back to where you were 4s ago" },
+  { id: "cage",   key: "X",     label: "CAGE",   title: "Cage",      color: "#7dffea", desc: "Wall the CPU in for 5 seconds" },
+  { id: "knock",  key: "C",     label: "KNOCK",  title: "Knockback", color: "#ff7a7a", desc: "Hurl the CPU 10 squares away" },
+  { id: "warp",   key: "V",     label: "WARP",   title: "Warp",      color: "#ff4da6", desc: "Teleport to a safe spot far away" },
+  { id: "shield", key: "G",     label: "SHIELD", title: "Shield",    color: "#8cc8ff", desc: "Blocks the next catch for 6 seconds" }
+];
+
+// Draws one symbol onto its own little canvas. px = how many screen pixels each square gets.
+function makeIcon(id, color, px) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 9 * px;
+  const g = c.getContext("2d");
+  const gap = Math.max(1, Math.floor(px / 4));   // a thin gap makes every square look like a tile
+  g.fillStyle = color;
+  ABILITY_ICONS[id].forEach((row, y) => {
+    for (let x = 0; x < 9; x++) {
+      if (row[x] === "#") g.fillRect(x * px, y * px, px - gap, px - gap);
+    }
+  });
+  return c;
+}
+
+// Each slot of the ability bar: a ready look and a recharging look, drawn once and reused every frame
+const SLOT_W = 60, SLOT_H = 70, SLOT_GAP = 6;
+function makeSlotFace(a, ready) {
+  const c = document.createElement("canvas");
+  c.width = SLOT_W;
+  c.height = SLOT_H;
+  const g = c.getContext("2d");
+  g.fillStyle = ready ? "rgba(77, 163, 255, 0.22)" : "rgba(0, 0, 0, 0.65)";
+  g.fillRect(0, 0, SLOT_W, SLOT_H);
+  g.drawImage(makeIcon(a.id, ready ? a.color : "#6c7384", 4), 12, 19);
+  g.fillStyle = ready ? "#fff" : "#8a8f9c";
+  g.font = "bold 11px monospace";
+  g.fillText(a.key, 5, 14);
+  g.font = "9px monospace";
+  g.fillText(a.label, 5, SLOT_H - 6);
+  return c;
+}
+const slotFaces = ABILITIES.map(a => [makeSlotFace(a, false), makeSlotFace(a, true)]);
+
+// What each ability is doing right now, in the same order as ABILITIES
+function abilityStates(now) {
+  const timed = (readyAt, total, active) => {
+    const remaining = Math.max(0, readyAt - now);
+    return { ready: remaining === 0, cooling: Math.min(1, remaining / total), remaining: remaining, active: !!active, count: -1 };
+  };
+  return [
+    { ready: mineCount > 0, cooling: 0, remaining: 0, active: false, count: mineCount },
+    timed(pulseReadyAt,  PULSE_COOLDOWN,  false),
+    timed(dashReadyAt,   DASH_COOLDOWN,   false),
+    timed(decoyReadyAt,  DECOY_COOLDOWN,  decoy !== null && now < decoy.until),
+    timed(phaseReadyAt,  PHASE_COOLDOWN,  now < phaseUntil),
+    timed(stopReadyAt,   STOP_COOLDOWN,   stopReadyAt - now > STOP_COOLDOWN - STOP_TIME),
+    timed(boostReadyAt,  BOOST_COOLDOWN,  now < boostUntil),
+    timed(rewindReadyAt, REWIND_COOLDOWN, false),
+    timed(cageReadyAt,   CAGE_COOLDOWN,   barriers.length > 0),
+    timed(knockReadyAt,  KNOCK_COOLDOWN,  false),
+    timed(warpReadyAt,   WARP_COOLDOWN,   false),
+    timed(shieldReadyAt, SHIELD_COOLDOWN, now < shieldUntil)
+  ];
+}
+
 // What colour a dot should be right now
 function dotColor(p, now) {
   if (p === p2) {
@@ -1105,16 +1658,15 @@ function dotColor(p, now) {
 
 function draw() {
   if (gameState === "paused" || gameState === "won") shiftTimers();   // keeps every timer (and the HUD) frozen while paused
-  // Each frame, slide the shown position 20% of the way to the real one.
-  // Bigger number = snappier, smaller number = floatier.
-  const SMOOTHING = 0.2;
+  // Each dot slides from the square it was on to the square it's on now. The slide lasts
+  // exactly one step, so it never trails behind where the game thinks it is.
+  const frameNow = performance.now();
   for (const p of [p1, p2]) {
-    p.drawX += (p.x - p.drawX) * SMOOTHING;
-    p.drawY += (p.y - p.drawY) * SMOOTHING;
+    const t = p.glideDur > 0 ? Math.min(1, (frameNow - p.glideStart) / p.glideDur) : 1;
+    p.drawX = p.fromX + (p.x - p.fromX) * t;
+    p.drawY = p.fromY + (p.y - p.fromY) * t;
   }
 
-  ctx.fillStyle = "#111";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // The "camera" follows player 1: we figure out where the screen's
   // top-left corner sits inside the big grid.
@@ -1126,77 +1678,38 @@ function draw() {
     focusX = N / 2 + Math.sin(drift * 0.03) * 70 + Math.sin(drift * 0.071) * 20;
     focusY = N / 2 + Math.cos(drift * 0.025) * 70 + Math.cos(drift * 0.067) * 20;
   }
-  const camX = focusX * CELL + CELL / 2 - canvas.width / 2;
-  const camY = focusY * CELL + CELL / 2 - canvas.height / 2;
-
-  // Only draw the grid lines that are actually visible on screen
-  const firstCol = Math.max(0, Math.floor(camX / CELL));
-  const lastCol  = Math.min(GRID_SIZE, Math.ceil((camX + canvas.width) / CELL));
-  const firstRow = Math.max(0, Math.floor(camY / CELL));
-  const lastRow  = Math.min(GRID_SIZE, Math.ceil((camY + canvas.height) / CELL));
+  const camX = Math.round(focusX * CELL + CELL / 2 - canvas.width / 2);   // whole pixels keep the copied ground crisp
+  const camY = Math.round(focusY * CELL + CELL / 2 - canvas.height / 2);
 
   const clock = Date.now() / 1000;   // seconds, used for pulsing animations
 
-  // Draw the terrain: floor colour for every square on screen, plus walls and lava
-  for (let row = firstRow; row < lastRow; row++) {
-    for (let col = firstCol; col < lastCol; col++) {
-      const idx = row * N + col;
-      const zone = BIOMES[biome[idx]];
-      const sx = col * CELL - camX;
-      const sy = row * CELL - camY;
-      ctx.fillStyle = zone.floor[shade[idx]];
-      ctx.fillRect(sx, sy, CELL, CELL);
-
-      // Little details so you can SEE the terrain effects
-      if (tile[idx] === 0 && shade[idx] === 0 && zone.speed !== 1) {
-        if (zone.speed > 1) {   // mud: a dark puddle
-          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-          ctx.beginPath();
-          ctx.ellipse(sx + CELL / 2, sy + CELL / 2, CELL * 0.3, CELL * 0.18, 0, 0, Math.PI * 2);
-          ctx.fill();
-        } else {                // ice: a white glint
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(sx + 10, sy + CELL - 12);
-          ctx.lineTo(sx + CELL - 14, sy + 12);
-          ctx.stroke();
-        }
-      }
-
-      // Lava: red-orange, with a glowing centre that pulses
-      if (tile[idx] === 2) {
-        ctx.fillStyle = "#b53210";
-        ctx.fillRect(sx, sy, CELL, CELL);
-        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(clock * 2 + idx);
-        ctx.fillStyle = "#ffa940";
-        ctx.fillRect(sx + 6, sy + 6, CELL - 12, CELL - 12);
-        ctx.globalAlpha = 1;
-      }
-
-      if (tile[idx] === 1) {
-        ctx.fillStyle = zone.wall;
-        ctx.fillRect(sx, sy, CELL, CELL);
-        ctx.fillStyle = zone.top;
-        ctx.fillRect(sx + 4, sy + 4, CELL - 8, CELL - 10);   // looks like a raised block
-      }
-    }
+  // The ground (floor, walls, grid lines, coordinates) is copied from the cache
+  const visCol0 = Math.floor(camX / CELL), visRow0 = Math.floor(camY / CELL);
+  const visCols = Math.ceil(canvas.width / CELL) + 1, visRows = Math.ceil(canvas.height / CELL) + 1;
+  const tc = terrainCache;
+  if (tc.dirty || visCol0 < tc.col0 || visRow0 < tc.row0 ||
+      visCol0 + visCols > tc.col0 + tc.cols || visRow0 + visRows > tc.row0 + tc.rows) {
+    renderTerrainCache(visCol0 - CACHE_MARGIN, visRow0 - CACHE_MARGIN, visCols + 2 * CACHE_MARGIN, visRows + 2 * CACHE_MARGIN);
   }
+  const mapFillsScreen = visCol0 >= 0 && visRow0 >= 0 && visCol0 + visCols <= N && visRow0 + visRows <= N;
+  if (!mapFillsScreen) {                       // near the map's edge there's empty space around it
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  // copy only the part of the cache that's on screen (not the whole spare canvas)
+  const srcX = camX - tc.col0 * CELL, srcY = camY - tc.row0 * CELL;
+  ctx.drawImage(tc.canvas, srcX, srcY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";   // faint grid lines on top of the terrain
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let col = firstCol; col <= lastCol; col++) {
-    const sx = col * CELL - camX;
-    ctx.moveTo(sx, firstRow * CELL - camY);
-    ctx.lineTo(sx, lastRow * CELL - camY);
+  // Lava glow: every lava square pulses (this is the only part of the ground that animates)
+  ctx.fillStyle = "#ffa940";
+  for (let i = 0; i < lavaCells.length; i++) {
+    const lc = lavaCells[i];
+    const lx = lc.x * CELL - camX, ly = lc.y * CELL - camY;
+    if (lx < -CELL || ly < -CELL || lx > canvas.width || ly > canvas.height) continue;
+    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(clock * 2 + lc.idx);
+    ctx.fillRect(lx + 6, ly + 6, CELL - 12, CELL - 12);
   }
-  for (let row = firstRow; row <= lastRow; row++) {
-    const sy = row * CELL - camY;
-    ctx.moveTo(firstCol * CELL - camX, sy);
-    ctx.lineTo(lastCol * CELL - camX, sy);
-  }
-  ctx.stroke();
+  ctx.globalAlpha = 1;
 
   // Draw the portals: a glowing, pulsing ring in the colour of its pair
   for (const idx of portalCells) {
@@ -1259,35 +1772,6 @@ function draw() {
     ctx.stroke();
   }
 
-  // Bold lines every 10 squares
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let col = firstCol; col <= lastCol; col++) {
-    if (col % 10 !== 0) continue;
-    const sx = col * CELL - camX;
-    ctx.moveTo(sx, firstRow * CELL - camY);
-    ctx.lineTo(sx, lastRow * CELL - camY);
-  }
-  for (let row = firstRow; row <= lastRow; row++) {
-    if (row % 10 !== 0) continue;
-    const sy = row * CELL - camY;
-    ctx.moveTo(firstCol * CELL - camX, sy);
-    ctx.lineTo(lastCol * CELL - camX, sy);
-  }
-  ctx.stroke();
-
-  // Number labels where the bold lines cross, like "50,100"
-  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-  ctx.font = "12px monospace";
-  for (let col = firstCol; col <= lastCol; col++) {
-    for (let row = firstRow; row <= lastRow; row++) {
-      if (col % 10 === 0 && row % 10 === 0) {
-        ctx.fillText(col + "," + row, col * CELL - camX + 4, row * CELL - camY + 14);
-      }
-    }
-  }
-
   // Draw the grid's outer edge brighter so you can see where it ends
   ctx.strokeStyle = "#888";
   ctx.lineWidth = 3;
@@ -1316,18 +1800,16 @@ function draw() {
     );
   }
 
-  // Draw the pulse ring: it grows outward and fades
+  // Effect rings (pulse, knockback, warp, rewind): they grow outward and fade
   const now = Date.now();
-  if (now < pulseFlashUntil) {
-    const t = 1 - (pulseFlashUntil - now) / 300;   // goes from 0 to 1
-    ctx.strokeStyle = "rgba(120, 200, 255, " + (1 - t) + ")";
+  for (let i = fxRings.length - 1; i >= 0; i--) {
+    const ring = fxRings[i];
+    if (now >= ring.until) { fxRings.splice(i, 1); continue; }
+    const t = 1 - (ring.until - now) / ring.dur;   // goes from 0 to 1
+    ctx.strokeStyle = "rgba(" + ring.color + ", " + (1 - t) + ")";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(
-      p1.drawX * CELL + CELL / 2 - camX,
-      p1.drawY * CELL + CELL / 2 - camY,
-      t * PULSE_RANGE * CELL, 0, Math.PI * 2
-    );
+    ctx.arc(ring.x * CELL + CELL / 2 - camX, ring.y * CELL + CELL / 2 - camY, t * ring.range * CELL, 0, Math.PI * 2);
     ctx.stroke();
   }
 
@@ -1336,35 +1818,55 @@ function draw() {
     drawDot(p.drawX * CELL + CELL / 2 - camX, p.drawY * CELL + CELL / 2 - camY, dotColor(p, now), CELL * 0.35);
   }
 
+  // The shield: a bubble around you that flickers faster as it's about to run out
+  if (gameState !== "menu" && now < shieldUntil) {
+    const flicker = (shieldUntil - now < 1500 && Math.floor(now / 120) % 2 === 0) ? 0.25 : 0.9;
+    ctx.strokeStyle = "rgba(140, 200, 255, " + flicker + ")";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p1.drawX * CELL + CELL / 2 - camX, p1.drawY * CELL + CELL / 2 - camY, CELL * 0.62, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   // In the menu there's no HUD, just the backdrop
   if (gameState === "menu") {
     requestAnimationFrame(draw);
     return;
   }
 
-  // ---- Info panel (top-left) ----
+  // ---- Info panel (top-left). Cached: only redrawn when its text changes ----
   const nowMs = Date.now();
-  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-  ctx.fillRect(8, 8, 290, 214);
-  ctx.fillStyle = "#fff";
-  ctx.font = "16px monospace";
-  ctx.fillText("You: " + p1.x + ", " + p1.y, 16, 28);
-  ctx.fillText("Survived: " + secondsSurvived().toFixed(1) + "s   Best: " + bestTime.toFixed(1) + "s", 16, 52);
-  const threat = threatLevel();
-  ctx.fillStyle = threat >= 5 ? "#ff5c5c" : (threat >= 3 ? "#ffd23f" : "#fff");   // gets redder as it climbs
-  ctx.fillText("Threat: LV " + threat, 16, 76);
-  ctx.fillStyle = "#fff";
-  ctx.fillText("CPU: " + (nowMs < frozenUntil ? "FROZEN" : (nowMs < slowedUntil ? "SLOWED" : "normal")), 16, 100);
-  const cpuSteps = nowMs < frozenUntil ? 0 : 1000 / currentCpuDelay();
-  ctx.fillText("CPU speed: " + cpuSteps.toFixed(1) + " steps/sec", 16, 124);
   const here = BIOMES[biome[p1.y * N + p1.x]];
-  ctx.fillText("Zone: " + here.name, 16, 148);
-  ctx.fillText("Crystals: " + crystalsCollected + " / " + NUM_BIG_CRYSTALS, 16, 172);
-  if (here.note) {
-    ctx.fillStyle = "#ffd23f";   // yellow so it stands out
-    ctx.fillText(here.note, 16, 196);
-    ctx.fillStyle = "#fff";
+  const threat = threatLevel();
+  const cpuSteps = nowMs < frozenUntil ? 0 : 1000 / currentCpuDelay();
+  const infoLines = [
+    "You: " + p1.x + ", " + p1.y,
+    "Survived: " + secondsSurvived().toFixed(1) + "s   Best: " + bestTime.toFixed(1) + "s",
+    "Threat: LV " + threat,
+    "CPU: " + (nowMs < frozenUntil ? "FROZEN" : (nowMs < slowedUntil ? "SLOWED" : "normal")),
+    "CPU speed: " + cpuSteps.toFixed(1) + " steps/sec",
+    "Zone: " + here.name,
+    "Crystals: " + crystalsCollected + " / " + NUM_BIG_CRYSTALS,
+    here.note
+  ];
+  const infoKey = infoLines.join("|");
+  if (infoKey !== hudCache.key) {
+    hudCache.key = infoKey;
+    const hg = hudCache.g;
+    hg.clearRect(0, 0, 290, 214);
+    hg.fillStyle = "rgba(0, 0, 0, 0.6)";
+    hg.fillRect(0, 0, 290, 214);
+    hg.font = "16px monospace";
+    for (let i = 0; i < 7; i++) {
+      hg.fillStyle = i === 2 ? (threat >= 5 ? "#ff5c5c" : (threat >= 3 ? "#ffd23f" : "#fff")) : "#fff";   // threat gets redder as it climbs
+      hg.fillText(infoLines[i], 8, 20 + i * 24);
+    }
+    if (infoLines[7]) {
+      hg.fillStyle = "#ffd23f";   // the zone's special rule, in yellow
+      hg.fillText(infoLines[7], 8, 20 + 7 * 24);
+    }
   }
+  ctx.drawImage(hudCache.canvas, 8, 8);
 
   // ---- Big message near the top of the screen (caught, crystal, etc.) ----
   if (nowMs < bannerUntil) {
@@ -1377,7 +1879,7 @@ function draw() {
   }
 
   // ---- Arrows at the screen edge pointing to crystals you can't see ----
-  const aLeft = 50, aRight = canvas.width - 50, aTop = 50, aBottom = canvas.height - 135;   // (stays clear of the ability bar)
+  const aLeft = 50, aRight = canvas.width - 50, aTop = nowMs < bannerUntil ? 112 : 50, aBottom = canvas.height - 135;   // (stays clear of the message and the ability bar)
   const aMidX = canvas.width / 2, aMidY = (aTop + aBottom) / 2;
   for (const c of crystals) {
     const sx = c.x * CELL + CELL / 2 - camX;
@@ -1412,45 +1914,29 @@ function draw() {
     ctx.textAlign = "left";
   }
 
-  // ---- Ability bar (bottom): one square per ability ----
-  const slots = [
-    { key: "SPC",   name: "MINE",  count: mineCount },
-    { key: "E",     name: "PULSE", readyAt: pulseReadyAt, cd: PULSE_COOLDOWN },
-    { key: "F",     name: "DASH",  readyAt: dashReadyAt,  cd: DASH_COOLDOWN },
-    { key: "Q",     name: "DECOY", readyAt: decoyReadyAt, cd: DECOY_COOLDOWN, active: decoy !== null && nowMs < decoy.until },
-    { key: "R",     name: "PHASE", readyAt: phaseReadyAt, cd: PHASE_COOLDOWN, active: nowMs < phaseUntil },
-    { key: "T",     name: "STOP",  readyAt: stopReadyAt,  cd: STOP_COOLDOWN,  active: stopReadyAt - nowMs > STOP_COOLDOWN - STOP_TIME },
-    { key: "SHIFT", name: "BOOST", readyAt: boostReadyAt, cd: BOOST_COOLDOWN, active: nowMs < boostUntil }
-  ];
-  const SLOT = 62, GAP = 8;
-  const barX = Math.round((canvas.width - (slots.length * SLOT + (slots.length - 1) * GAP)) / 2);
-  const barY = canvas.height - SLOT - 20;
-  slots.forEach((sl, i) => {
-    const x = barX + i * (SLOT + GAP);
-    const isMine = sl.count !== undefined;
-    const remaining = isMine ? 0 : Math.max(0, sl.readyAt - nowMs);
-    const ready = isMine ? sl.count > 0 : remaining === 0;
-    const cooling = isMine ? 0 : Math.min(1, remaining / sl.cd);   // 1 = just used, 0 = ready
-    ctx.fillStyle = ready ? "rgba(77, 163, 255, 0.22)" : "rgba(0, 0, 0, 0.65)";
-    ctx.fillRect(x, barY, SLOT, SLOT);
-    if (cooling > 0) {   // a grey fill that drains downward as the ability recharges
+  // ---- Ability bar (bottom): one tile per ability, each with its symbol ----
+  const states = abilityStates(nowMs);
+  const barW = ABILITIES.length * SLOT_W + (ABILITIES.length - 1) * SLOT_GAP;
+  const barX = Math.round((canvas.width - barW) / 2);
+  const barY = canvas.height - SLOT_H - 16;
+  ctx.font = "bold 13px monospace";
+  ctx.textAlign = "right";
+  for (let i = 0; i < ABILITIES.length; i++) {
+    const st = states[i];
+    const x = barX + i * (SLOT_W + SLOT_GAP);
+    ctx.drawImage(slotFaces[i][st.ready ? 1 : 0], x, barY);          // the symbol, key and name (pre-drawn)
+    if (st.cooling > 0) {                                            // a grey fill that drains downward as it recharges
       ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
-      ctx.fillRect(x, barY + SLOT * (1 - cooling), SLOT, SLOT * cooling);
+      ctx.fillRect(x, barY + SLOT_H * (1 - st.cooling), SLOT_W, SLOT_H * st.cooling);
     }
-    ctx.strokeStyle = sl.active ? "#ffd23f" : (ready ? "#4da3ff" : "rgba(255, 255, 255, 0.3)");
+    ctx.strokeStyle = st.active ? "#ffd23f" : (st.ready ? "#4da3ff" : "rgba(255, 255, 255, 0.3)");   // yellow = in use right now
     ctx.lineWidth = 2;
-    ctx.strokeRect(x + 1, barY + 1, SLOT - 2, SLOT - 2);
-    ctx.fillStyle = ready ? "#fff" : "#8a8f9c";
-    ctx.font = "bold 12px monospace";
-    ctx.fillText(sl.key, x + 6, barY + 16);
-    ctx.font = "10px monospace";
-    ctx.fillText(sl.name, x + 6, barY + SLOT - 8);
-    ctx.font = "bold 22px monospace";
-    ctx.textAlign = "center";
-    if (isMine) ctx.fillText(sl.count, x + SLOT / 2, barY + SLOT / 2 + 8);
-    else if (remaining > 0) ctx.fillText(Math.ceil(remaining / 1000), x + SLOT / 2, barY + SLOT / 2 + 8);
-    ctx.textAlign = "left";
-  });
+    ctx.strokeRect(x + 1, barY + 1, SLOT_W - 2, SLOT_H - 2);
+    ctx.fillStyle = st.ready ? "#fff" : "#c4c8d2";
+    if (st.count >= 0) ctx.fillText(st.count, x + SLOT_W - 5, barY + 14);                      // mines: how many you have
+    else if (st.remaining > 0) ctx.fillText(Math.ceil(st.remaining / 1000), x + SLOT_W - 5, barY + 14);   // others: seconds to wait
+  }
+  ctx.textAlign = "left";
 
   if (settings.minimap) drawMinimap();
   requestAnimationFrame(draw);
@@ -1633,6 +2119,7 @@ let wiping = false;
 function gridWipe(onCovered, coverMs, revealMs) {
   if (wiping) { onCovered(); return; }
   wiping = true;
+  wipe.classList.add("on");   // the transition canvas only exists while it's animating
   swoosh();
   const W = wipe.width = window.innerWidth;
   const H = wipe.height = window.innerHeight;
@@ -1660,7 +2147,7 @@ function gridWipe(onCovered, coverMs, revealMs) {
   }
   requestAnimationFrame(frame);
   setTimeout(onCovered, coverMs);   // timers (not animation frames) decide when things happen, so it can't get stuck
-  setTimeout(() => { wiping = false; wctx.clearRect(0, 0, W, H); }, coverMs + revealMs + 30);
+  setTimeout(() => { wiping = false; wctx.clearRect(0, 0, W, H); wipe.classList.remove("on"); }, coverMs + revealMs + 30);
 }
 
 // Goes to another menu screen with a quick wipe
@@ -1719,6 +2206,15 @@ function shiftTimers() {
   if (phaseUntil) phaseUntil += gap;
   if (boostUntil) boostUntil += gap;
   if (decoy) decoy.until += gap;
+  rewindReadyAt += gap;
+  cageReadyAt += gap;
+  knockReadyAt += gap;
+  warpReadyAt += gap;
+  shieldReadyAt += gap;
+  if (shieldUntil) shieldUntil += gap;
+  for (const b of barriers) b.until += gap;
+  for (const r of fxRings) r.until += gap;
+  for (const h of posHistory) h.t += gap;
   pausedAt = Date.now();
 }
 
@@ -1891,6 +2387,7 @@ function buildWordmark(el) {
 // Every step, both dots move one square along the ring. Blue stays 3 squares behind red.
 let chaseStep = 0;
 function moveChasers() {
+  if (ui.classList.contains("hidden") || (currentScreen !== "main" && currentScreen !== "splash")) return;   // nobody's looking
   chaseStep++;
   const redAt = O_RING[chaseStep % O_RING.length];
   const blueAt = O_RING[(chaseStep + O_RING.length - 3) % O_RING.length];
@@ -1899,6 +2396,33 @@ function moveChasers() {
     c.red.style.setProperty("--y", redAt[1]);
     c.blue.style.setProperty("--x", blueAt[0]);
     c.blue.style.setProperty("--y", blueAt[1]);
+  }
+}
+
+// ================= ABILITY LIST ON THE HOW TO PLAY SCREEN =================
+// Built from the same ABILITIES list as the ability bar, so the symbols always match.
+function buildAbilityList() {
+  const list = document.getElementById("ability-list");
+  list.textContent = "";
+  for (const a of ABILITIES) {
+    const item = document.createElement("li");
+    const iconBox = document.createElement("span");
+    iconBox.className = "aicon";
+    iconBox.appendChild(makeIcon(a.id, a.color, 3));
+    const key = document.createElement("kbd");
+    key.textContent = a.key === "SPC" ? "Space" : (a.key === "SHIFT" ? "Shift" : a.key);
+    if (key.textContent.length > 1) key.className = "wide";
+    const text = document.createElement("span");
+    const name = document.createElement("b");
+    name.textContent = a.title;
+    const desc = document.createElement("small");
+    desc.textContent = a.desc;
+    text.appendChild(name);
+    text.appendChild(desc);
+    item.appendChild(iconBox);
+    item.appendChild(key);
+    item.appendChild(text);
+    list.appendChild(item);
   }
 }
 
@@ -1913,7 +2437,12 @@ const TIPS = [
   "Portals work for the CPU too. Watch for it popping out behind you.",
   "Lava is deadly to you, but the CPU walks around it.",
   "The CPU keeps getting faster. Don't take too long.",
-  "Overdrive doubles your speed. Combine it with a dash."
+  "Overdrive doubles your speed. Combine it with a dash.",
+  "Cage the CPU, then run for a crystal. You get 5 seconds.",
+  "Rewind undoes your last 4 seconds. A great escape after a mistake.",
+  "Knockback flings the CPU 10 squares away and freezes it.",
+  "Warp drops you far away from the CPU. Follow the arrows to a crystal.",
+  "Shield blocks one catch. It flickers when it's about to run out."
 ];
 const tipEl = document.getElementById("tip");
 let tipIndex = Math.floor(Math.random() * TIPS.length);
@@ -1931,6 +2460,7 @@ setInterval(() => {
 setText("worldId", Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, "0"));
 buildWordmark(document.getElementById("wm-splash"));
 buildWordmark(document.getElementById("wm-main"));
+buildAbilityList();
 moveChasers();
 setInterval(moveChasers, 260);
 loadSettings();
