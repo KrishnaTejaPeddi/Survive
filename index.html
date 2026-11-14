@@ -124,16 +124,16 @@
   @media (max-width: 980px) { .card { display: none; } }
 
   /* ================= PANELS (How to play, Settings, Pause, Victory) ================= */
-  .panel { width: min(860px, 94vw); max-height: calc(100vh - 150px); overflow: auto; padding: 28px 32px 30px; background: rgba(0, 0, 0, 0.78); border: 1px solid var(--edge); animation: stepIn 0.4s steps(4) both; }
+  .panel { width: min(860px, 94vw); max-height: calc(100vh - 150px); overflow: auto; padding: 22px 32px 22px; background: rgba(0, 0, 0, 0.78); border: 1px solid var(--edge); animation: stepIn 0.4s steps(4) both; }
   .panel.narrow { width: min(580px, 94vw); }
   .panel.center { width: min(470px, 94vw); text-align: center; }
   .panel::-webkit-scrollbar { width: 8px; }
   .panel::-webkit-scrollbar-thumb { background: #56607a; }
-  .ph { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .ph { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .panel.center .ph { justify-content: center; }
   .ph h2 { margin: 0; font-size: 20px; letter-spacing: 0.22em; text-transform: uppercase; }
-  .panel h3 { margin: 18px 0 4px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--blue); }
-  .lead { margin: 16px 0 0; font-size: 14px; line-height: 1.7; color: #d0d6e6; text-align: left; }
+  .panel h3 { margin: 14px 0 4px; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--blue); }
+  .lead { margin: 12px 0 0; font-size: 14px; line-height: 1.7; color: #d0d6e6; text-align: left; }
   .lead b { color: #fff; }
   .cy { color: var(--cyan); font-weight: 700; }
   .cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0 36px; }
@@ -146,10 +146,11 @@
   .keys { display: inline-flex; gap: 4px; flex: none; min-width: 138px; }
   .icon { display: flex; justify-content: center; flex: none; width: 30px; }
   .dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6); }
+  .chest { display: block; width: 18px; height: 15px; background: #b87a3a; border: 2px solid #5a3a1a; }
   .gem { display: block; width: 16px; height: 24px; background: var(--cyan); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
   .btn { width: auto; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; }
-  .btn.small { display: inline-flex; margin-top: 18px; padding: 12px 22px; }
+  .btn.small { display: inline-flex; margin-top: 14px; padding: 12px 22px; }
   .menu { display: flex; flex-direction: column; gap: 8px; width: 100%; }
   .menu .btn { width: 100%; }
 
@@ -180,17 +181,18 @@
 
   /* ---- How to play: the abilities grid ---- */
   .panel.wide { width: min(1000px, 94vw); }
-  .movekeys { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-size: 13px; color: #d0d6e6; text-align: left; }
+  .movekeys { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 13px; color: #d0d6e6; text-align: left; }
   .movekeys .keys { min-width: 0; }
   .gapx { width: 22px; }
   .abilities { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; }
-  .abilities li { display: flex; align-items: center; gap: 12px; padding: 5px 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); text-align: left; }
+  .abilities li { display: flex; align-items: center; gap: 12px; padding: 4px 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); text-align: left; }
   .abilities b { color: #fff; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
   .abilities small { display: block; margin-top: 2px; color: var(--dim); font-size: 11.5px; }
   .abilities kbd { flex: none; }
   .aicon { flex: none; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
   .aicon canvas { display: block; }
   .list.two { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
+  .list.two li { padding: 5px 0; }
   @media (max-width: 800px) { .abilities, .list.two { grid-template-columns: 1fr; } }
 
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -259,7 +261,7 @@
   <section class="screen" id="screen-howto">
     <div class="panel wide">
       <div class="ph"><i class="sq"></i><h2>How to play</h2></div>
-      <p class="lead"><b>Objective:</b> collect all <span class="cy">4 big crystals</span> before the CPU catches you. Each one is a huge power surge. The red CPU never stops hunting you, and the longer a round goes, the faster and smarter it gets. Follow the arrows at the edge of the screen to find the crystals.</p>
+      <p class="lead"><b>Objective:</b> collect all <span class="cy">4 big crystals</span> before the CPU catches you. Each one is a huge power surge. The CPU gets faster and smarter the longer a round goes. Follow the cyan arrows at the edge of the screen to find them.</p>
       <div class="movekeys">
         <span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move</span>
         <span class="gapx"></span>
@@ -269,11 +271,16 @@
       <ul class="abilities" id="ability-list"></ul>
       <h3>The world</h3>
       <ul class="list two">
-        <li><span class="icon"><i class="gem"></i></span><span><b>Big crystals.</b> Refill every ability and freeze the CPU. Get all 4 to win</span></li>
-        <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in glowing pairs. The CPU uses them too</span></li>
-        <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you back to the start. The CPU avoids it</span></li>
+        <li><span class="icon"><i class="gem"></i></span><span><b>Big crystals</b> refill everything. Get all 4 to win</span></li>
+        <li><span class="icon"><i class="chest"></i></span><span><b>Supply caches</b> ready 2 abilities, +3 mines</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#ff4da6"></i></span><span><b>Portals</b> come in pairs. The CPU uses them too</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#ff7a1a"></i></span><span><b>Lava</b> sends you to the start. The CPU avoids it</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#1d5a9c"></i></span><span><b>Water:</b> only you can wade (slowly)</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#b0305a"></i></span><span><b>Thorns</b> slow whoever steps on them</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#9a7a3e"></i></span><span><b>Quicksand</b> holds whoever steps in</span></li>
         <li><span class="icon"><i class="dot" style="--c:#6a7d3f"></i></span><span><b>Mud</b> slows everyone down</span></li>
         <li><span class="icon"><i class="dot" style="--c:#dfe9ef"></i></span><span><b>Ice</b> speeds everyone up</span></li>
+        <li><span class="icon"><i class="dot" style="--c:#8a8f9c"></i></span><span><b>Labyrinths</b> are mazes hiding crystals</span></li>
       </ul>
       <button class="btn small" data-action="back-main" data-focus><span class="cur"></span>Back</button>
     </div>
@@ -344,7 +351,7 @@
 
 <script>
 // ---- SETTINGS (change these numbers to play with it) ----
-const GRID_SIZE = 200;   // the grid is 200 x 200 squares
+const GRID_SIZE = 300;  // the grid is 300 x 300 squares
 const CELL = 40;         // each square is 40 pixels wide
 
 // What the game is doing right now: "menu", "playing" or "paused"
@@ -373,32 +380,60 @@ for (const p of [p1, p2]) {
 }
 
 // ---- THE MAP ----
-// The world has 6 zones with their own colours. Rocks and trees are walls:
-// they block you AND the CPU. Portals teleport whoever steps on them (you
-// or the CPU). Crystals are collectables.
+// The world is 300 x 300 squares, split into 9 zones with their own colours and rules.
+// Every square has a "ground type" (the numbers stored in tile):
+//   0 floor         1 rock or tree (a wall)       2 lava (deadly to you)      3 cage wall (from the Cage ability)
+//   4 water (only YOU can wade through it)        5 thorns (slow whoever steps on them)
+//   6 quicksand (whoever steps in is stuck for a moment)
 const N = GRID_SIZE;
 const DIRS = [[0, -1], [0, 1], [-1, 0], [1, 0]];   // up, down, left, right
+const T_FLOOR = 0, T_WALL = 1, T_LAVA = 2, T_CAGE = 3, T_WATER = 4, T_THORN = 5, T_SAND = 6;
+// 1 = the CPU can't walk onto this ground type (walls, lava, cage walls and water)
+const CPU_BLOCKED = new Uint8Array([0, 1, 1, 1, 1, 0, 0]);
 
-// Each zone can change how fast things move there. speed: 1 = normal,
-// bigger = slower, smaller = faster. This affects you AND the CPU.
+// Each zone has its own colours and can have special rules.
+//  speed: 1 = normal, bigger = slower, smaller = faster (affects you AND the CPU)
+//  lava / water / thorns / sand: this zone gets patches of that ground type
+//  wallBoost: this zone has extra trees (dense woods)
+//  decor: tiny cosmetic details sprinkled on the floor (they change nothing about how it plays)
 const BIOMES = [
-  { name: "Meadow",        floor: ["#2f5d3a", "#315f3c", "#2c5836", "#346640"], wall: "#1b3d26", top: "#3f7d4f", speed: 1,    note: "" },
-  { name: "Desert",        floor: ["#c9a66b", "#c4a064", "#cfac72", "#c29c5f"], wall: "#8a6a3a", top: "#b08a50", speed: 1,    note: "" },
-  { name: "Tundra",        floor: ["#dfe9ef", "#d6e2ea", "#e6eef3", "#d0dde6"], wall: "#7f98a8", top: "#a9c0cf", speed: 0.65, note: "ice: everyone moves faster" },
-  { name: "Swamp",         floor: ["#3b4a2c", "#38472a", "#3f4e2f", "#354427"], wall: "#1f2916", top: "#34471f", speed: 1.8,  note: "mud: everyone moves slower" },
-  { name: "Volcano",       floor: ["#3a2a2a", "#352626", "#3f2e2e", "#312323"], wall: "#1a1111", top: "#7a2f1a", speed: 1,    note: "lava pools: deadly to you", lava: true },
-  { name: "Crystal Caves", floor: ["#2c2a52", "#2a2850", "#302e58", "#282649"], wall: "#4a3f8f", top: "#8272e0", speed: 1,    note: "" }
+  { name: "Meadow",        floor: ["#2f5d3a", "#315f3c", "#2c5836", "#346640"], wall: "#1b3d26", top: "#3f7d4f", speed: 1,    note: "",
+    decor: { shape: "square", colors: ["#ffd6e8", "#fff3a8", "#ffffff"] } },
+  { name: "Desert",        floor: ["#c9a66b", "#c4a064", "#cfac72", "#c29c5f"], wall: "#8a6a3a", top: "#b08a50", speed: 1,    note: "quicksand: stuck briefly", sand: true,
+    decor: { shape: "square", colors: ["#a8854d", "#d9bd88"] } },
+  { name: "Tundra",        floor: ["#dfe9ef", "#d6e2ea", "#e6eef3", "#d0dde6"], wall: "#7f98a8", top: "#a9c0cf", speed: 0.65, note: "ice: everyone moves faster",
+    decor: { shape: "cross", colors: ["#ffffff", "#b8d8ee"] } },
+  { name: "Swamp",         floor: ["#3b4a2c", "#38472a", "#3f4e2f", "#354427"], wall: "#1f2916", top: "#34471f", speed: 1.8,  note: "mud: everyone moves slower",
+    decor: { shape: "line", colors: ["#2a3a1c", "#5c7a3a"] } },
+  { name: "Volcano",       floor: ["#3a2a2a", "#352626", "#3f2e2e", "#312323"], wall: "#1a1111", top: "#7a2f1a", speed: 1,    note: "lava pools: deadly to you", lava: true,
+    decor: { shape: "square", colors: ["#ff7a1a", "#ffb347"] } },
+  { name: "Crystal Caves", floor: ["#2c2a52", "#2a2850", "#302e58", "#282649"], wall: "#4a3f8f", top: "#8272e0", speed: 1,    note: "",
+    decor: { shape: "cross", colors: ["#b9a8ff", "#7dffea"] } },
+  { name: "Lagoon",        floor: ["#3b8f9b", "#3a8896", "#3f95a1", "#378592"], wall: "#24485c", top: "#6fa6c0", speed: 1,    note: "water: only you can wade", water: true,
+    decor: { shape: "ripple", colors: ["#7fd0dc"] } },
+  { name: "Bramble",       floor: ["#4b3a4f", "#483749", "#4f3d53", "#443345"], wall: "#2a1c2d", top: "#7a3d6b", speed: 1,    note: "thorns slow anyone in them", thorns: true,
+    decor: { shape: "cross", colors: ["#e0709a", "#b25ad6"] } },
+  { name: "Woods",         floor: ["#25402a", "#233d28", "#28452d", "#223a26"], wall: "#10281a", top: "#2f6b3d", speed: 1,    note: "dense woods: many dead ends", wallBoost: true,
+    decor: { shape: "square", colors: ["#8a5a2b", "#c98f3a"] } }
 ];
-const PORTAL_COLORS = ["#ff4da6", "#4dffd2", "#ffd24d", "#4da6ff", "#b84dff", "#ff8a4d", "#9dff4d", "#ffffff"];
-const NUM_ROCK_CLUMPS = 380;   // more = a more crowded map
-const NUM_RUINS = 24;          // walled rooms with doorways
-const NUM_BIG_CRYSTALS = 4;   // the big crystals. Collect ALL of them to win the round
-const NUM_LAVA_POOLS = 45;     // lava pools placed in the Volcano zone
+const PORTAL_COLORS = ["#ff4da6", "#4dffd2", "#ffd24d", "#4da6ff", "#b84dff", "#ff8a4d", "#9dff4d", "#ffffff",
+                       "#00c2ff", "#c3ff00", "#ff00c8", "#00ffa2", "#ffa200", "#8a6bff"];
+
+// How much stuff is in the world
+const NUM_ROCK_CLUMPS = 850;    // more = a more crowded map
+const NUM_RUINS = 50;           // walled rooms with doorways
+const NUM_LABYRINTHS = 7;       // mazes, often guarding a crystal
+const NUM_BIG_CRYSTALS = 4;     // the big crystals. Collect ALL of them to win the round
+const NUM_CHESTS = 12;          // supply caches
+const LAVA_DENSITY = 0.09;      // roughly how much of each special zone is covered by its hazard
+const WATER_DENSITY = 0.14;
+const THORN_DENSITY = 0.10;
+const SAND_DENSITY = 0.08;
 
 // One entry per square on the map:
 const biome = new Uint8Array(N * N);               // which zone it belongs to
 const shade = new Uint8Array(N * N);               // 0-3: tiny colour variation so the floor isn't flat
-const tile = new Uint8Array(N * N);                // 0 = open floor, 1 = wall
+const tile = new Uint8Array(N * N);                // the ground type (see the list above)
 const portalTo = new Int32Array(N * N).fill(-1);   // for portal squares: where you pop out
 const portalColor = {};                            // for portal squares: its colour
 
@@ -413,9 +448,10 @@ function openCell(x, y) {                          // turn a square into open fl
 }
 
 // Step 1: split the world into zones. We drop random "seed" points and every
-// square joins the zone of its nearest seed.
+// square joins the zone of its nearest seed. The first 9 seeds are one of each zone.
+const NUM_SEEDS = 30;
 const seeds = [];
-for (let i = 0; i < 14; i++) {
+for (let i = 0; i < NUM_SEEDS; i++) {
   seeds.push({ x: rand(N), y: rand(N), b: i < BIOMES.length ? i : rand(BIOMES.length) });
 }
 for (let y = 0; y < N; y++) {
@@ -430,28 +466,122 @@ for (let y = 0; y < N; y++) {
   }
 }
 
-// Step 2: build the walls
-const ruinSpots = [];   // a spot inside each ruin (we put a crystal there)
+// Which squares belong to zones with a special hazard (so we can scatter that hazard inside them)
+const zoneCells = { lava: [], water: [], thorns: [], sand: [], wallBoost: [] };
+for (let i = 0; i < N * N; i++) {
+  const zone = BIOMES[biome[i]];
+  for (const flag in zoneCells) {
+    if (zone[flag]) zoneCells[flag].push(i);
+  }
+}
 
-function buildWalls() {
-  tile.fill(0);
-  ruinSpots.length = 0;
+// Step 2: build the walls and hazards
+const ruinSpots = [];   // a spot inside each ruin (a crystal or supply cache may be hidden there)
+const keepClear = new Uint8Array(N * N);   // squares the hazards must stay out of (ruins, mazes and their doorways)
+const labSpots = [];    // the middle of each labyrinth
 
-  // Clumps of rocks and trees
-  for (let i = 0; i < NUM_ROCK_CLUMPS; i++) {
-    const cx = rand(N), cy = rand(N), r = 1 + rand(4);
+// Marks a rectangle that hazards (lava, water, thorns, quicksand) must not cover
+function markClear(x0, y0, w, h) {
+  for (let y = Math.max(0, y0); y < Math.min(N, y0 + h); y++) {
+    for (let x = Math.max(0, x0); x < Math.min(N, x0 + w); x++) keepClear[y * N + x] = 1;
+  }
+}
+
+// Clumps of rocks or trees
+function placeClump(cx, cy, r) {
+  for (let y = cy - r; y <= cy + r; y++) {
+    for (let x = cx - r; x <= cx + r; x++) {
+      if (x < 0 || y < 0 || x >= N || y >= N) continue;
+      if (Math.hypot(x - cx, y - cy) <= r && Math.random() < 0.85) tile[y * N + x] = 1;
+    }
+  }
+}
+
+// A labyrinth: a maze made by the "recursive backtracker". Start in one room, keep tunnelling
+// into a room you haven't visited, and back up when you get stuck. Every room ends up connected.
+function carveLabyrinth(x0, y0, k) {            // k x k rooms, so (2k+1) squares wide
+  const size = 2 * k + 1;
+  markClear(x0 - 3, y0 - 3, size + 6, size + 6);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) tile[(y0 + y) * N + (x0 + x)] = 1;
+  }
+  const visited = new Uint8Array(k * k);
+  const stack = [[0, 0]];
+  visited[0] = 1;
+  tile[(y0 + 1) * N + (x0 + 1)] = 0;
+  while (stack.length > 0) {
+    const cx = stack[stack.length - 1][0], cy = stack[stack.length - 1][1];
+    const options = [];
+    for (const dir of DIRS) {
+      const nx = cx + dir[0], ny = cy + dir[1];
+      if (nx >= 0 && ny >= 0 && nx < k && ny < k && !visited[ny * k + nx]) options.push([nx, ny, dir[0], dir[1]]);
+    }
+    if (options.length === 0) { stack.pop(); continue; }
+    const pick = options[rand(options.length)];
+    visited[pick[1] * k + pick[0]] = 1;
+    tile[(y0 + 1 + cy * 2 + pick[3]) * N + (x0 + 1 + cx * 2 + pick[2])] = 0;   // knock out the wall between the rooms
+    tile[(y0 + 1 + pick[1] * 2) * N + (x0 + 1 + pick[0] * 2)] = 0;
+    stack.push([pick[0], pick[1]]);
+  }
+  // two entrances, on the top and bottom edges. A long clear corridor leads out of each, and
+  // hazards are kept out of it, so rocks and lakes can't wall the maze in.
+  const topX = x0 + 1 + 2 * rand(k), botX = x0 + 1 + 2 * rand(k);
+  for (let j = 0; j <= 9; j++) {
+    openCell(topX, y0 - j);
+    openCell(botX, y0 + size - 1 + j);
+  }
+  markClear(topX - 1, y0 - 10, 3, 10);
+  markClear(botX - 1, y0 + size, 3, 10);
+  const mid = Math.floor(k / 2);
+  labSpots.push({ x: x0 + 1 + 2 * mid, y: y0 + 1 + 2 * mid });
+}
+
+// Scatters patches of a hazard (lava, water, thorns or quicksand) inside the zones that have it.
+// "density" is roughly what share of the zone ends up covered.
+function scatterPatches(flag, type, density, rMin, rMax) {
+  const cells = zoneCells[flag];
+  if (cells.length === 0) return;
+  const avgArea = Math.PI * ((rMin + rMax) / 2) ** 2;
+  const count = Math.max(2, Math.ceil(cells.length * density / avgArea));
+  for (let i = 0; i < count; i++) {
+    const idx = cells[rand(cells.length)];
+    const cx = idx % N, cy = (idx / N) | 0;
+    const r = rMin + rand(rMax - rMin + 1);
     for (let y = cy - r; y <= cy + r; y++) {
       for (let x = cx - r; x <= cx + r; x++) {
         if (x < 0 || y < 0 || x >= N || y >= N) continue;
-        if (Math.hypot(x - cx, y - cy) <= r && Math.random() < 0.85) tile[y * N + x] = 1;
+        if (Math.hypot(x - cx, y - cy) > r * (0.7 + Math.random() * 0.4)) continue;   // slightly ragged edges
+        if (tile[y * N + x] !== 0) continue;                                          // only turn open floor into it
+        if (keepClear[y * N + x]) continue;                                           // ruins and mazes stay hazard-free
+        if (!BIOMES[biome[y * N + x]][flag]) continue;                                // and each hazard stays inside its own zone
+        if (Math.hypot(x - START1.x, y - START1.y) < 8) continue;
+        if (Math.hypot(x - START2.x, y - START2.y) < 8) continue;
+        tile[y * N + x] = type;
       }
     }
+  }
+}
+
+function buildWalls() {
+  tile.fill(0);
+  keepClear.fill(0);
+  ruinSpots.length = 0;
+  labSpots.length = 0;
+
+  // Clumps of rocks and trees everywhere...
+  for (let i = 0; i < NUM_ROCK_CLUMPS; i++) placeClump(rand(N), rand(N), 1 + rand(4));
+  // ...and a lot more trees in the Woods
+  const woods = zoneCells.wallBoost;
+  for (let i = 0; woods.length > 0 && i < woods.length / 45; i++) {
+    const idx = woods[rand(woods.length)];
+    placeClump(idx % N, (idx / N) | 0, 1 + rand(3));
   }
 
   // Ruins: a walled room with three doorways
   for (let i = 0; i < NUM_RUINS; i++) {
     const w = 7 + rand(7), h = 6 + rand(6);
     const rx = 2 + rand(N - w - 4), ry = 2 + rand(N - h - 4);
+    markClear(rx - 3, ry - 3, w + 6, h + 6);
     for (let y = ry; y < ry + h; y++) {
       for (let x = rx; x < rx + w; x++) {
         const isEdge = (x === rx || x === rx + w - 1 || y === ry || y === ry + h - 1);
@@ -471,6 +601,19 @@ function buildWalls() {
     ruinSpots.push({ x: rx + 1 + rand(w - 2), y: ry + 1 + rand(h - 2) });
   }
 
+  // Labyrinths: mazes with the middle room far from the entrances. Kept well apart from each other.
+  for (let i = 0; i < NUM_LABYRINTHS; i++) {
+    for (let tries = 0; tries < 30; tries++) {
+      const k = 8 + rand(4);                           // 8 to 11 rooms across
+      const size = 2 * k + 1;
+      const lx = 12 + rand(N - size - 24), ly = 12 + rand(N - size - 24);
+      const cx = lx + size / 2, cy = ly + size / 2;
+      if (labSpots.some(l => Math.hypot(l.x - cx, l.y - cy) < 50)) continue;
+      carveLabyrinth(lx, ly, k);
+      break;
+    }
+  }
+
   // Keep both starting areas clear
   for (const s of [START1, START2]) {
     for (let dy = -5; dy <= 5; dy++) {
@@ -478,27 +621,14 @@ function buildWalls() {
     }
   }
 
-  // Lava pools (tile type 2), only in zones marked as lava zones (the Volcano)
-  let pools = 0;
-  for (let tries = 0; tries < 3000 && pools < NUM_LAVA_POOLS; tries++) {
-    const cx = rand(N), cy = rand(N);
-    if (!BIOMES[biome[cy * N + cx]].lava) continue;
-    pools++;
-    const r = 1 + rand(3);
-    for (let y = cy - r; y <= cy + r; y++) {
-      for (let x = cx - r; x <= cx + r; x++) {
-        if (x < 0 || y < 0 || x >= N || y >= N) continue;
-        if (Math.hypot(x - cx, y - cy) > r) continue;
-        if (tile[y * N + x] !== 0) continue;   // only turn open floor into lava
-        if (Math.hypot(x - START1.x, y - START1.y) < 8) continue;
-        if (Math.hypot(x - START2.x, y - START2.y) < 8) continue;
-        tile[y * N + x] = 2;
-      }
-    }
-  }
+  // Hazards: only inside the zones that have them
+  scatterPatches("lava",   T_LAVA,  LAVA_DENSITY,  1, 3);
+  scatterPatches("water",  T_WATER, WATER_DENSITY, 3, 7);
+  scatterPatches("thorns", T_THORN, THORN_DENSITY, 2, 4);
+  scatterPatches("sand",   T_SAND,  SAND_DENSITY,  2, 4);
 }
 
-// Step 3: any open pocket you can't walk to from the start gets filled in,
+// Step 3: any open pocket the CPU can't walk to from the start gets filled in,
 // so nobody can ever get trapped. Returns true if the CPU's start is reachable.
 function fillUnreachable() {
   const reached = new Uint8Array(N * N);
@@ -511,13 +641,13 @@ function fillUnreachable() {
       const nx = cx + DIRS[d][0], ny = cy + DIRS[d][1];
       if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
       const idx = ny * N + nx;
-      if (tile[idx] !== 0 || reached[idx]) continue;   // walls and lava aren't walkable
+      if (CPU_BLOCKED[tile[idx]] || reached[idx]) continue;   // walls, lava and water block the way
       reached[idx] = 1;
       stack.push(idx);
     }
   }
   for (let i = 0; i < N * N; i++) {
-    if (tile[i] === 0 && !reached[i]) tile[i] = 1;
+    if (!CPU_BLOCKED[tile[i]] && !reached[i]) tile[i] = 1;   // a pocket nobody can reach becomes rock
   }
   return reached[START2.y * N + START2.x] === 1;
 }
@@ -526,8 +656,12 @@ for (let attempt = 0; attempt < 20; attempt++) {   // try again if a layout is b
   buildWalls();
   if (fillUnreachable()) break;
 }
+// A maze whose exits ended up blocked got filled in, so forget it
+for (let i = labSpots.length - 1; i >= 0; i--) {
+  if (tile[labSpots[i].y * N + labSpots[i].x] !== 0) labSpots.splice(i, 1);
+}
 
-// A list of every open square (handy for placing things)
+// A list of every open floor square (handy for placing things)
 const openCells = [];
 for (let i = 0; i < N * N; i++) {
   if (tile[i] === 0) openCells.push(i);
@@ -553,7 +687,7 @@ for (let i = 0; i < PORTAL_COLORS.length; i++) {
     tries++;
   } while (tries < 300 && (
     portalTo[a] >= 0 || portalTo[b] >= 0 || !farFromStarts(a) || !farFromStarts(b) ||
-    Math.hypot((a % N) - (b % N), ((a / N) | 0) - ((b / N) | 0)) < 50   // keep the two ends far apart
+    Math.hypot((a % N) - (b % N), ((a / N) | 0) - ((b / N) | 0)) < 80   // keep the two ends far apart
   ));
   if (a === b) continue;
   portalTo[a] = b;
@@ -573,11 +707,13 @@ function pickCrystalSpot(quarter) {
   const qy = Math.floor(quarter / 2) * (N / 2);
   const inQuarter = (x, y) => x >= qx && x < qx + N / 2 && y >= qy && y < qy + N / 2;
   const farFromStarts = (x, y) =>
-    Math.hypot(x - START1.x, y - START1.y) > 25 && Math.hypot(x - START2.x, y - START2.y) > 25;
+    Math.hypot(x - START1.x, y - START1.y) > 40 && Math.hypot(x - START2.x, y - START2.y) > 40;
+  const usable = (r) => inQuarter(r.x, r.y) && farFromStarts(r.x, r.y) && tile[r.y * N + r.x] === 0 && portalTo[r.y * N + r.x] < 0;
 
-  // Prefer the hidden spot inside a ruin, if this quarter has a good one
-  const ruins = ruinSpots.filter(r =>
-    inQuarter(r.x, r.y) && farFromStarts(r.x, r.y) && tile[r.y * N + r.x] === 0 && portalTo[r.y * N + r.x] < 0);
+  // Best: the heart of a labyrinth. Next best: the hidden spot inside a ruin.
+  const labs = labSpots.filter(usable);
+  if (labs.length > 0) return labs[rand(labs.length)];
+  const ruins = ruinSpots.filter(usable);
   if (ruins.length > 0) return ruins[rand(ruins.length)];
 
   for (let tries = 0; tries < 1000; tries++) {
@@ -597,6 +733,71 @@ function resetCrystals() {
   crystalsCollected = 0;
 }
 resetCrystals();
+
+// Step 6: supply caches. Walk onto one for a partial refill: two random abilities are ready again
+// and you get 3 mines. They're hidden in ruins and mazes, or just lying around, and they all come
+// back at the start of every round.
+const chestSpots = [];
+const chests = [];            // the caches still waiting this round
+
+function pickChestSpots() {
+  const good = (x, y) => {
+    const idx = y * N + x;
+    return tile[idx] === 0 && portalTo[idx] < 0 &&
+      Math.hypot(x - START1.x, y - START1.y) > 30 && Math.hypot(x - START2.x, y - START2.y) > 30 &&
+      !crystalSpots.some(c => c.x === x && c.y === y) && !chestSpots.some(c => c.x === x && c.y === y);
+  };
+  const hidden = ruinSpots.concat(labSpots).filter(r => good(r.x, r.y));
+  while (chestSpots.length < NUM_CHESTS * 0.6 && hidden.length > 0) {      // most are hidden in ruins and mazes
+    const spot = hidden.splice(rand(hidden.length), 1)[0];
+    if (good(spot.x, spot.y)) chestSpots.push({ x: spot.x, y: spot.y });
+  }
+  for (let tries = 0; chestSpots.length < NUM_CHESTS && tries < 3000; tries++) {
+    const idx = openCells[rand(openCells.length)];
+    const x = idx % N, y = (idx / N) | 0;
+    if (good(x, y)) chestSpots.push({ x: x, y: y });
+  }
+}
+pickChestSpots();
+
+function resetChests() {
+  chests.length = 0;
+  for (const spot of chestSpots) chests.push({ x: spot.x, y: spot.y });
+}
+resetChests();
+
+// One reset for each ability except mines (those are handled separately), in the same order as ABILITIES
+const CHEST_RESETS = [
+  () => { pulseReadyAt = 0; },  () => { dashReadyAt = 0; },   () => { decoyReadyAt = 0; },
+  () => { phaseReadyAt = 0; },  () => { stopReadyAt = 0; },   () => { boostReadyAt = 0; },
+  () => { rewindReadyAt = 0; }, () => { cageReadyAt = 0; },   () => { knockReadyAt = 0; },
+  () => { warpReadyAt = 0; },   () => { shieldReadyAt = 0; }
+];
+
+function collectChests() {
+  for (let i = 0; i < chests.length; i++) {
+    if (chests[i].x === p1.x && chests[i].y === p1.y) {
+      chests.splice(i, 1);
+      mineCount = Math.min(MAX_MINES, mineCount + 3);
+      const picks = [];
+      while (picks.length < 2) {
+        const r = rand(CHEST_RESETS.length);
+        if (!picks.includes(r)) picks.push(r);
+      }
+      for (const r of picks) CHEST_RESETS[r]();
+      showBanner("SUPPLY CACHE   " + picks.map(r => ABILITIES[r + 1].title).join(" + ") + " ready, +3 mines", 3200);
+      beep(520, 0.1, "square", 0.04);
+      setTimeout(() => beep(780, 0.15, "square", 0.04), 90);
+      return;
+    }
+  }
+}
+
+// Anything you can pick up by standing on it
+function collectPickups() {
+  collectCrystals();
+  collectChests();
+}
 
 // Each crystal is a big power surge: every ability refills, and the CPU is
 // frozen and then slowed for a long time. Get all four and you win.
@@ -634,6 +835,19 @@ function collectCrystals() {
   }
 }
 
+// What colour a square is on the minimap
+function minimapColor(i) {
+  const b = BIOMES[biome[i]];
+  switch (tile[i]) {
+    case 1: return b.top;
+    case 2: return "#ff7a1a";
+    case 4: return "#1d5a9c";
+    case 5: return "#b0305a";
+    case 6: return "#9a7a3e";
+    default: return b.floor[0];
+  }
+}
+
 // A tiny picture of the whole map for the minimap (one pixel per square)
 const mapImg = document.createElement("canvas");
 mapImg.width = N;
@@ -641,7 +855,7 @@ mapImg.height = N;
 const mctx = mapImg.getContext("2d");
 for (let i = 0; i < N * N; i++) {
   const b = BIOMES[biome[i]];
-  mctx.fillStyle = tile[i] === 1 ? b.top : (tile[i] === 2 ? "#ff7a1a" : b.floor[0]);
+  mctx.fillStyle = minimapColor(i);
   mctx.fillRect(i % N, (i / N) | 0, 1, 1);
 }
 for (const idx of portalCells) {
@@ -653,11 +867,14 @@ for (const idx of portalCells) {
 // portals) to a target square. It works like a ripple spreading out from the
 // CPU, one step at a time, until the ripple touches the target.
 const seen = new Int32Array(N * N);       // "have we visited this square in THIS search?"
-const firstDir = new Uint8Array(N * N);   // which first step leads to each square
+const parentOf = new Int32Array(N * N);   // which square we came from to get to each square
+const stepDir = new Uint8Array(N * N);    // the direction of that last step
 const queue = new Int32Array(N * N);
 let searchId = 0;
+let lastPath = [];                        // the whole route the latest search found, as a list of directions
 
 function nextStepToward(fromX, fromY, toX, toY) {   // returns 0-3 (a direction) or -1
+  lastPath = [];
   if (fromX === toX && fromY === toY) return -1;
   searchId++;
   const start = fromY * N + fromX, goal = toY * N + toX;
@@ -671,12 +888,19 @@ function nextStepToward(fromX, fromY, toX, toY) {   // returns 0-3 (a direction)
       const nx = cx + DIRS[d][0], ny = cy + DIRS[d][1];
       if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
       let idx = ny * N + nx;
-      if (tile[idx] !== 0) continue;   // the CPU walks around walls AND lava                 // walls block the way
+      if (CPU_BLOCKED[tile[idx]]) continue;           // the CPU walks around walls, lava and water
       if (portalTo[idx] >= 0) idx = portalTo[idx];   // a portal pops you out at its partner
       if (seen[idx] === searchId) continue;
       seen[idx] = searchId;
-      firstDir[idx] = (cur === start) ? d : firstDir[cur];
-      if (idx === goal) return firstDir[idx];
+      parentOf[idx] = cur;
+      stepDir[idx] = d;
+      if (idx === goal) {                            // found it: walk back to the start to read off the route
+        const route = [];
+        for (let c = idx; c !== start; c = parentOf[c]) route.push(stepDir[c]);
+        route.reverse();
+        lastPath = route;
+        return route[0];
+      }
       queue[tail++] = idx;
     }
   }
@@ -782,7 +1006,8 @@ function startPhase() {
 
 // If Phase ends while you're inside a wall, you get pushed out to the nearest open square
 function ejectFromWall() {
-  if (tile[p1.y * N + p1.x] === 0) return;
+  const here = tile[p1.y * N + p1.x];
+  if (here !== 1 && here !== 3) return;          // only pushes you out of rock or cage walls (water and the rest are fine)
   for (let r = 1; r <= 15; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
@@ -822,6 +1047,15 @@ function startBoost() {
   beep(500, 0.25, "square", 0.025);
 }
 
+// ---- TERRAIN EFFECTS ON YOU ----
+// Thorns slow you down, quicksand holds you in place for a moment, and water slows you while you
+// wade (see playerStepMs). The CPU feels thorns and quicksand too, but it can't enter water at all.
+const THORN_TIME = 1500;        // how long you stay slowed after stepping on thorns
+const QUICKSAND_TIME = 900;     // how long you're stuck after stepping in quicksand
+let thornUntil = 0;
+let stuckUntil = 0;
+let lastZone = null;            // the zone you were in a moment ago (to announce a new one)
+
 // ---- EFFECT RINGS ----
 // Expanding circles drawn on the ground for pulse, knockback, warp and rewind.
 const fxRings = [];
@@ -854,7 +1088,7 @@ function rewind() {
   posHistory.length = 0;
   beep(700, 0.1, "triangle", 0.05);
   setTimeout(() => beep(350, 0.2, "triangle", 0.05), 90);
-  collectCrystals();
+  collectPickups();
 }
 
 // X: Cage. Wall the CPU in for 5 seconds.
@@ -877,11 +1111,11 @@ function castCage() {
       const x = p2.x + dx, y = p2.y + dy;
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
       const idx = y * N + x;
-      if (tile[idx] !== 0 || portalTo[idx] >= 0) continue;           // already a wall, lava or a portal
+      if (CPU_BLOCKED[tile[idx]] || portalTo[idx] >= 0) continue;     // already a wall, lava, water or a portal
       if (x === p1.x && y === p1.y) continue;
       if (crystals.some(c => c.x === x && c.y === y)) continue;
+      barriers.push({ idx: idx, until: now + CAGE_TIME, was: tile[idx] });   // remember what the ground was
       tile[idx] = 3;
-      barriers.push({ idx: idx, until: now + CAGE_TIME });
       placed++;
     }
   }
@@ -910,7 +1144,7 @@ function knockbackCpu(steps) {
       const x = p2.x + dir[0], y = p2.y + dir[1];
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
       const idx = y * N + x;
-      if (tile[idx] !== 0 || portalTo[idx] >= 0) continue;
+      if (CPU_BLOCKED[tile[idx]] || portalTo[idx] >= 0) continue;
       const d = Math.hypot(x - p1.x, y - p1.y);
       if (d > bestDist) { bestDist = d; best = [x, y]; }
     }
@@ -959,7 +1193,7 @@ function warp() {
   addRing(p1.x, p1.y, "255, 77, 166", 4, 450);
   beep(900, 0.1, "sine", 0.05);
   setTimeout(() => beep(450, 0.25, "sine", 0.05), 80);
-  collectCrystals();
+  collectPickups();
 }
 
 // G: Shield. For 6 seconds the next time the CPU catches you is blocked:
@@ -997,8 +1231,8 @@ function move(player, dx, dy) {
   const ny = Math.max(0, Math.min(GRID_SIZE - 1, player.y + dy));
   const ground = tile[ny * N + nx];
   const phasing = player === p1 && Date.now() < phaseUntil;   // Phase lets YOU walk through walls
-  if ((ground === 1 || ground === 3) && !phasing) return;        // a wall is in the way: stay put
-  if (ground === 2 && player !== p1) return;   // the CPU won't walk into lava
+  if ((ground === 1 || ground === 3) && !phasing) return;   // a wall is in the way: stay put
+  if (player !== p1 && CPU_BLOCKED[ground]) return;          // the CPU can't enter walls, lava or water
   arrive(player, nx, ny);
 }
 
@@ -1015,6 +1249,25 @@ function arrive(player, nx, ny) {
     return;
   }
 
+  // Thorns slow whoever steps on them. Quicksand holds them in place for a moment. Water splashes.
+  if (ground === 5) {
+    if (player === p1) {
+      thornUntil = Date.now() + THORN_TIME;
+      if (Date.now() >= bannerUntil) showBanner("Thorns! You're slowed", 900);
+    } else {
+      slowCpu(THORN_TIME);
+    }
+  } else if (ground === 6) {
+    if (player === p1) {
+      stuckUntil = Date.now() + QUICKSAND_TIME;
+      if (Date.now() >= bannerUntil) showBanner("Quicksand! You're stuck", 900);
+    } else {
+      freezeCpu(QUICKSAND_TIME);
+    }
+  } else if (ground === 4 && player === p1) {
+    addRing(nx, ny, "90, 160, 255", 1.2, 300);
+  }
+
   // Stepped on a portal? Pop out of its partner (and snap the camera there)
   const exit = portalTo[ny * N + nx];
   if (exit >= 0) {
@@ -1027,7 +1280,7 @@ function arrive(player, nx, ny) {
     }
   }
 
-  if (player === p1) collectCrystals();   // grab a crystal if we're standing on one
+  if (player === p1) collectPickups();   // grab a crystal if we're standing on one
 }
 
 // ---- KEYBOARD ----
@@ -1047,7 +1300,8 @@ let lastMoveAt = 0;
 function tryMove() {
   if (heldKeys.length === 0 || gameState !== "playing") return;
   const now = Date.now();
-  if (now - lastMoveAt < MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed * (now < boostUntil ? 0.5 : 1)) return;   // mud makes this longer, ice shorter   // too soon for another step
+  if (now < stuckUntil) return;                // stuck in quicksand
+  if (now - lastMoveAt < playerStepMs()) return;   // mud makes this longer, ice shorter   // too soon for another step
   lastMoveAt = now;
   const dir = moveKeys[heldKeys[heldKeys.length - 1]];   // the newest held key wins
   move(p1, dir[0], dir[1]);
@@ -1057,6 +1311,11 @@ function gameTick() {
   tryMove();
   if (gameState === "playing") {
     const now = Date.now();
+    const zoneNow = BIOMES[biome[p1.y * N + p1.x]];
+    if (zoneNow !== lastZone) {                    // you've walked into a new zone
+      lastZone = zoneNow;
+      if (now >= bannerUntil) showBanner("Entering " + zoneNow.name + (zoneNow.note ? "   (" + zoneNow.note + ")" : ""), 2500);
+    }
     if (now - lastHistoryAt >= 100) {            // note where you are every 0.1s (for Rewind)
       lastHistoryAt = now;
       posHistory.push({ x: p1.x, y: p1.y, t: now });
@@ -1064,7 +1323,7 @@ function gameTick() {
     }
     for (let i = barriers.length - 1; i >= 0; i--) {   // cage walls disappear when their time is up
       if (now >= barriers[i].until) {
-        if (tile[barriers[i].idx] === 3) tile[barriers[i].idx] = 0;
+        if (tile[barriers[i].idx] === 3) tile[barriers[i].idx] = barriers[i].was;
         barriers.splice(i, 1);
         terrainCache.dirty = true;
       }
@@ -1194,6 +1453,11 @@ function newRound(reason) {
   roundActive = true;
   roundStart = Date.now();
   resetCrystals();   // all four crystals come back each round
+  resetChests();     // ...and so do the supply caches
+  cpuPath = [];      // the CPU forgets its route
+  lastZone = null;
+  thornUntil = 0;
+  stuckUntil = 0;
   slowedUntil = 0;
   mines.length = 0;
   mineCount = MAX_MINES;
@@ -1213,7 +1477,7 @@ function newRound(reason) {
   warpReadyAt = 0;
   shieldReadyAt = 0;
   shieldUntil = 0;
-  for (const b of barriers) { if (tile[b.idx] === 3) tile[b.idx] = 0; }   // cage walls vanish
+  for (const b of barriers) { if (tile[b.idx] === 3) tile[b.idx] = b.was; }   // cage walls vanish
   barriers.length = 0;
   terrainCache.dirty = true;
   fxRings.length = 0;
@@ -1222,6 +1486,28 @@ function newRound(reason) {
   p1.x = START1.x;  p1.y = START1.y;
   p2.x = START2.x;  p2.y = START2.y;
   for (const p of [p1, p2]) snapTo(p);
+}
+
+// The route the CPU is currently following (see cpuStep)
+let CPU_PATH_STEPS = 6;           // how many steps it follows a route before searching again (when far away)
+let cpuPath = [];
+let cpuPathAge = 0;
+const cpuPathAt = { x: -1, y: -1 };     // where the CPU was after its last step
+const cpuPathGoal = { x: -1, y: -1 };   // where that route was heading
+
+// The closest square (within 10) that the CPU is able to stand on
+function nearestOpenCell(x, y) {
+  for (let r = 0; r <= 10; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;     // only the ring r squares away
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+        if (!CPU_BLOCKED[tile[ny * N + nx]]) return { x: nx, y: ny };
+      }
+    }
+  }
+  return null;
 }
 
 function cpuStep() {
@@ -1241,18 +1527,55 @@ function cpuStep() {
     targetX = decoy.x;
     targetY = decoy.y;
   }
-  // If the "aim ahead" spot is inside a wall, just aim at you instead
-  if (tile[targetY * N + targetX] !== 0) {
+  // If the "aim ahead" spot is a wall or water, just aim at you instead
+  if (CPU_BLOCKED[tile[targetY * N + targetX]]) {
     targetX = p1.x;
     targetY = p1.y;
   }
+  // If YOU are inside a wall (Phase) or in the water, the CPU can't reach you. It goes to the
+  // nearest spot it CAN stand on, and waits there.
+  if (CPU_BLOCKED[tile[targetY * N + targetX]]) {
+    const dry = nearestOpenCell(targetX, targetY);
+    if (dry) { targetX = dry.x; targetY = dry.y; }
+  }
 
-  // Work out the shortest route (around walls, through portals) and take one step
-  let dir = nextStepToward(p2.x, p2.y, targetX, targetY);
-  if (dir === -1 && (targetX !== p1.x || targetY !== p1.y)) {
-    dir = nextStepToward(p2.x, p2.y, p1.x, p1.y);   // couldn't reach that spot: go for you
+  // Work out the shortest route (around walls, through portals) and take one step.
+  // Far away, the route barely changes from step to step, so it's worked out once and then
+  // followed for a few steps (searching the whole 300 x 300 world every step would be wasteful).
+  // Up close it's searched fresh every step, so the CPU reacts to every move you make.
+  const farAway = Math.abs(targetX - p2.x) + Math.abs(targetY - p2.y) > 30;
+  let dir = -1;
+  if (farAway && cpuPath.length > 0 && cpuPathAge < CPU_PATH_STEPS &&
+      cpuPathAt.x === p2.x && cpuPathAt.y === p2.y &&                                          // nothing has moved the CPU since
+      Math.abs(cpuPathGoal.x - targetX) + Math.abs(cpuPathGoal.y - targetY) <= 4) {            // and the goal hasn't moved far
+    const d = cpuPath[0];
+    const nx = p2.x + DIRS[d][0], ny = p2.y + DIRS[d][1];
+    if (nx >= 0 && ny >= 0 && nx < N && ny < N && !CPU_BLOCKED[tile[ny * N + nx]]) {          // and the way is still open
+      cpuPath.shift();
+      cpuPathAge++;
+      dir = d;
+    }
+  }
+  if (dir === -1) {                                                    // otherwise search fresh
+    let goalX = targetX, goalY = targetY;
+    dir = nextStepToward(p2.x, p2.y, goalX, goalY);
+    if (dir === -1 && !CPU_BLOCKED[tile[p1.y * N + p1.x]] && (targetX !== p1.x || targetY !== p1.y)) {
+      goalX = p1.x;                                                    // couldn't reach that spot: go for you
+      goalY = p1.y;
+      dir = nextStepToward(p2.x, p2.y, goalX, goalY);
+    }
+    if (dir !== -1) {
+      cpuPath = lastPath.slice(1);                                     // the rest of the route, after this first step
+      cpuPathAge = 0;
+      cpuPathGoal.x = goalX;
+      cpuPathGoal.y = goalY;
+    } else {
+      cpuPath = [];
+    }
   }
   if (dir !== -1) move(p2, DIRS[dir][0], DIRS[dir][1]);
+  cpuPathAt.x = p2.x;                                                  // where the CPU should be when it takes the next step
+  cpuPathAt.y = p2.y;
 
   // If the CPU steps on a mine, the mine goes off and slows it down
   for (let i = mines.length - 1; i >= 0; i--) {
@@ -1308,7 +1631,11 @@ function drawDot(cx, cy, color, radius) {
 // How long a dot takes to slide to the next square: one whole step.
 function playerStepMs() {
   const now = Date.now();
-  return Math.max(30, MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed * (now < boostUntil ? 0.5 : 1));
+  let ms = MOVE_DELAY * BIOMES[biome[p1.y * N + p1.x]].speed;
+  if (tile[p1.y * N + p1.x] === 4) ms *= 1.8;      // wading through water
+  if (now < thornUntil) ms *= 2.2;                 // tangled in thorns
+  if (now < boostUntil) ms *= 0.5;                 // overdrive
+  return Math.max(30, ms);
 }
 function startGlide(p, ms) {   // begin sliding from wherever the dot is drawn right now
   p.fromX = p.drawX;
@@ -1333,6 +1660,30 @@ const CACHE_MARGIN = 4;   // extra squares kept around the screen
 const terrainCache = { canvas: document.createElement("canvas"), col0: 0, row0: 0, cols: 0, rows: 0, dirty: true };
 terrainCache.g = terrainCache.canvas.getContext("2d");
 
+// Tiny cosmetic details (flowers, pebbles, embers...) sprinkled on the floor. They're picked by a
+// fixed formula from each square's number, so the same squares always get the same details.
+function drawDecor(g, zone, idx, sx, sy) {
+  const h = Math.imul(idx, 2654435761) >>> 0;
+  if ((h & 15) >= 4) return;                       // about 1 square in 4 gets a detail
+  const d = zone.decor;
+  g.fillStyle = d.colors[(h >>> 4) % d.colors.length];
+  const x = sx + 6 + ((h >>> 8) % 26);
+  const y = sy + 6 + ((h >>> 14) % 26);
+  if (d.shape === "square") {
+    g.fillRect(x, y, 4, 4);
+    g.fillRect(sx + 6 + ((h >>> 20) % 26), sy + 6 + ((h >>> 24) % 26), 3, 3);
+  } else if (d.shape === "cross") {
+    g.fillRect(x - 3, y, 7, 2);
+    g.fillRect(x, y - 3, 2, 7);
+  } else if (d.shape === "line") {
+    g.fillRect(x, y - 4, 2, 9);
+    g.fillRect(x + 5, y - 2, 2, 7);
+  } else if (d.shape === "ripple") {
+    g.fillRect(x - 5, y, 11, 2);
+    g.fillRect(x - 2, y + 5, 6, 2);
+  }
+}
+
 function renderTerrainCache(col0, row0, cols, rows) {
   const c = terrainCache, g = c.g;
   c.col0 = col0; c.row0 = row0; c.cols = cols; c.rows = rows; c.dirty = false;
@@ -1352,20 +1703,23 @@ function renderTerrainCache(col0, row0, cols, rows) {
       g.fillStyle = zone.floor[shade[idx]];
       g.fillRect(sx, sy, CELL, CELL);
       const t = tile[idx];
-      if (t === 0 && shade[idx] === 0 && zone.speed !== 1) {      // little details so you can SEE the terrain effects
-        if (zone.speed > 1) {   // mud: a dark puddle
-          g.fillStyle = "rgba(0, 0, 0, 0.3)";
-          g.beginPath();
-          g.ellipse(sx + CELL / 2, sy + CELL / 2, CELL * 0.3, CELL * 0.18, 0, 0, Math.PI * 2);
-          g.fill();
-        } else {                // ice: a white glint
-          g.strokeStyle = "rgba(255, 255, 255, 0.9)";
-          g.lineWidth = 2;
-          g.beginPath();
-          g.moveTo(sx + 10, sy + CELL - 12);
-          g.lineTo(sx + CELL - 14, sy + 12);
-          g.stroke();
+      if (t === 0) {
+        if (shade[idx] === 0 && zone.speed !== 1) {      // little details so you can SEE the terrain effects
+          if (zone.speed > 1) {   // mud: a dark puddle
+            g.fillStyle = "rgba(0, 0, 0, 0.3)";
+            g.beginPath();
+            g.ellipse(sx + CELL / 2, sy + CELL / 2, CELL * 0.3, CELL * 0.18, 0, 0, Math.PI * 2);
+            g.fill();
+          } else {                // ice: a white glint
+            g.strokeStyle = "rgba(255, 255, 255, 0.9)";
+            g.lineWidth = 2;
+            g.beginPath();
+            g.moveTo(sx + 10, sy + CELL - 12);
+            g.lineTo(sx + CELL - 14, sy + 12);
+            g.stroke();
+          }
         }
+        if (zone.decor) drawDecor(g, zone, idx, sx, sy);
       } else if (t === 1) {     // a rock or tree: looks like a raised block
         g.fillStyle = zone.wall;
         g.fillRect(sx, sy, CELL, CELL);
@@ -1379,6 +1733,35 @@ function renderTerrainCache(col0, row0, cols, rows) {
         g.fillRect(sx, sy, CELL, CELL);
         g.fillStyle = "#7dffea";
         g.fillRect(sx + 4, sy + 4, CELL - 8, CELL - 10);
+      } else if (t === 4) {     // water: deep blue with a few lighter ripples
+        const h = Math.imul(idx, 2654435761) >>> 0;
+        g.fillStyle = "#1d5a9c";
+        g.fillRect(sx, sy, CELL, CELL);
+        g.fillStyle = "#3d80c9";
+        g.fillRect(sx + 5 + (h % 12), sy + 9 + ((h >>> 4) % 6), 12, 2);
+        g.fillRect(sx + 12 + ((h >>> 8) % 12), sy + 24 + ((h >>> 12) % 6), 12, 2);
+      } else if (t === 5) {     // thorns: three red spikes growing out of the floor
+        g.fillStyle = "#b0305a";
+        for (let k = 0; k < 3; k++) {
+          const bx = sx + 6 + k * 11, by = sy + 31;
+          g.beginPath();
+          g.moveTo(bx, by);
+          g.lineTo(bx + 4, by - 19 + (k % 2) * 6);
+          g.lineTo(bx + 8, by);
+          g.closePath();
+          g.fill();
+        }
+      } else if (t === 6) {     // quicksand: darker sand with swirling rings
+        g.fillStyle = "#9a7a3e";
+        g.fillRect(sx, sy, CELL, CELL);
+        g.strokeStyle = "#6b5226";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(sx + CELL / 2, sy + CELL / 2, 12, 0, Math.PI * 2);
+        g.stroke();
+        g.beginPath();
+        g.arc(sx + CELL / 2, sy + CELL / 2, 5, 0, Math.PI * 2);
+        g.stroke();
       }
     }
   }
@@ -1651,6 +2034,8 @@ function dotColor(p, now) {
     if (now < slowedUntil) return "#9b7bff";   // slowed: purple
     return p.color;
   }
+  if (now < stuckUntil) return "#e0c080";                   // stuck in quicksand: sandy
+  if (now < thornUntil) return "#9fd36b";                   // tangled in thorns: green
   if (now < phaseUntil) return "rgba(77, 163, 255, 0.4)";   // phasing: see-through
   if (now < boostUntil) return "#8fd0ff";                   // overdrive: bright
   return p.color;
@@ -1675,8 +2060,8 @@ function draw() {
   let focusY = p1.drawY;
   if (gameState === "menu") {
     const drift = Date.now() / 1000;
-    focusX = N / 2 + Math.sin(drift * 0.03) * 70 + Math.sin(drift * 0.071) * 20;
-    focusY = N / 2 + Math.cos(drift * 0.025) * 70 + Math.cos(drift * 0.067) * 20;
+    focusX = N / 2 + Math.sin(drift * 0.03) * (N * 0.35) + Math.sin(drift * 0.071) * (N * 0.1);
+    focusY = N / 2 + Math.cos(drift * 0.025) * (N * 0.35) + Math.cos(drift * 0.067) * (N * 0.1);
   }
   const camX = Math.round(focusX * CELL + CELL / 2 - canvas.width / 2);   // whole pixels keep the copied ground crisp
   const camY = Math.round(focusY * CELL + CELL / 2 - canvas.height / 2);
@@ -1732,6 +2117,19 @@ function draw() {
     ctx.beginPath();
     ctx.arc(px, py, CELL * 0.18, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  // Draw the supply caches: little wooden crates with a gold plus
+  for (const chest of chests) {
+    const cx0 = chest.x * CELL - camX, cy0 = chest.y * CELL - camY;
+    if (cx0 < -CELL || cy0 < -CELL || cx0 > canvas.width || cy0 > canvas.height) continue;
+    ctx.fillStyle = "#5a3a1a";
+    ctx.fillRect(cx0 + 7, cy0 + 9, 26, 22);
+    ctx.fillStyle = "#b87a3a";
+    ctx.fillRect(cx0 + 9, cy0 + 11, 22, 18);
+    ctx.fillStyle = "#ffd23f";
+    ctx.fillRect(cx0 + 18, cy0 + 13, 4, 14);
+    ctx.fillRect(cx0 + 13, cy0 + 18, 14, 4);
   }
 
   // Draw the BIG crystals: a large diamond on a pulsing 3x3 pad
@@ -1890,7 +2288,7 @@ function draw() {
     const ky = ddy > 0 ? (aBottom - aMidY) / ddy : (ddy < 0 ? (aTop - aMidY) / ddy : Infinity);
     const k = Math.min(kx, ky);
     let ax = aMidX + ddx * k, ay = aMidY + ddy * k;
-    if (settings.minimap && ax > canvas.width - 250 && ay < 240) ax = canvas.width - 250;   // slide away from the minimap
+    if (settings.minimap && ax > canvas.width - 280 && ay < 280) ax = canvas.width - 280;   // slide away from the minimap
     if (ax < 320 && ay < 235) ax = 320;                                                    // slide away from the info panel
     const angle = Math.atan2(ddy, ddx);
     ctx.save();
@@ -1944,11 +2342,13 @@ function draw() {
 
 // A small map in the corner so you can see where BOTH dots are
 function drawMinimap() {
-  const size = 200, pad = 16;
+  const size = 240, pad = 16;
   const left = canvas.width - size - pad;
   const top = pad;
-  ctx.imageSmoothingEnabled = false;                 // keep the little map crisp
+  ctx.imageSmoothingEnabled = true;                  // the map is shrunk to fit, so smooth it
   ctx.drawImage(mapImg, left, top, size, size);      // the picture of the whole world
+  ctx.fillStyle = "#ffd23f";                         // supply caches show as small yellow dots
+  for (const chest of chests) ctx.fillRect(left + (chest.x / N) * size - 1, top + (chest.y / N) * size - 1, 3, 3);
   ctx.fillStyle = "#7dffea";                         // crystals show as cyan dots
   for (const c of crystals) {
     ctx.fillRect(left + (c.x / N) * size - 4, top + (c.y / N) * size - 4, 9, 9);
@@ -2101,7 +2501,7 @@ function showScreen(name) {
   for (const key in screens) screens[key].classList.toggle("active", key === name);
   updateMenuLabels();
   const target = screens[name].querySelector("[data-focus]") || screens[name].querySelector("button");
-  if (target) target.focus();   // so the keyboard works straight away
+  if (target) target.focus({ preventScroll: true });   // so the keyboard works straight away
 }
 
 function hideMenus() {
@@ -2212,6 +2612,8 @@ function shiftTimers() {
   warpReadyAt += gap;
   shieldReadyAt += gap;
   if (shieldUntil) shieldUntil += gap;
+  if (thornUntil) thornUntil += gap;
+  if (stuckUntil) stuckUntil += gap;
   for (const b of barriers) b.until += gap;
   for (const r of fxRings) r.until += gap;
   for (const h of posHistory) h.t += gap;
@@ -2442,7 +2844,12 @@ const TIPS = [
   "Rewind undoes your last 4 seconds. A great escape after a mistake.",
   "Knockback flings the CPU 10 squares away and freezes it.",
   "Warp drops you far away from the CPU. Follow the arrows to a crystal.",
-  "Shield blocks one catch. It flickers when it's about to run out."
+  "Shield blocks one catch. It flickers when it's about to run out.",
+  "The CPU can't enter water, but you can. It's a slow way to shake it off.",
+  "Mazes (labyrinths) often hide a big crystal in the middle.",
+  "Supply caches are hidden in ruins and mazes. They make two abilities ready again.",
+  "Thorns and quicksand slow the CPU too. Lure it through them.",
+  "Standing in the water? The CPU waits on the shore. Don't stay too long."
 ];
 const tipEl = document.getElementById("tip");
 let tipIndex = Math.floor(Math.random() * TIPS.length);
